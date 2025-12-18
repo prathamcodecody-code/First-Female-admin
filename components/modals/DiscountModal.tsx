@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
-export default function DiscountModal({ product, onClose, onSaved }) {
+
+interface DiscountModalProps {
+  product: any; // Ideally replace 'any' with your Product interface
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+export default function DiscountModal({ product, onClose, onSaved }: DiscountModalProps) {
   const [type, setType] = useState(product.discountType || "");
   const [value, setValue] = useState(product.discountValue || "");
 
