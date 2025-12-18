@@ -26,9 +26,9 @@ export default function CreateProductPage() {
   const [description, setDescription] = useState("");
 
   // DROPDOWN DATA
-  const [categories, setCategories] = useState([]);
-  const [types, setTypes] = useState([]);
-  const [subtypes, setSubtypes] = useState([]);
+  const [categories, setCategories] = useState<any[]>([]);
+const [types, setTypes] = useState<any[]>([]);
+const [subtypes, setSubtypes] = useState<any[]>([]);
 
   // SELECTED VALUES - Changed to number | string for proper handling
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -37,7 +37,7 @@ export default function CreateProductPage() {
   const [selectedSize, setSelectedSize] = useState("");
 
   // IMAGES
-  const [images, setImages] = useState([null, null, null, null]);
+  const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
   const [sizes, setSizes] = useState<
   { size: string; stock: number; price?: number }[]
 >([]);
@@ -46,7 +46,7 @@ export default function CreateProductPage() {
   // FETCH FUNCTIONS
   // =============================
 
-  const fetchTypes = async (categoryId) => {
+  const fetchTypes = async (categoryId: string) => {
     try {
       console.log("Fetching types for categoryId:", categoryId, "Type:", typeof categoryId);
       const res = await api.get(`/product-types?categoryId=${categoryId}`);
@@ -64,7 +64,7 @@ export default function CreateProductPage() {
     }
   };
 
-  const fetchSubtypes = async (typeId) => {
+  const fetchSubtypes = async (typeId: string) => {
     try {
       console.log("Fetching subtypes for typeId:", typeId, "Type:", typeof typeId);
       const res = await api.get(`/product-subtypes?typeId=${typeId}`);
@@ -118,7 +118,7 @@ export default function CreateProductPage() {
   // IMAGE HANDLER
   // =============================
 
-  const handleImageChange = (index, file) => {
+  const handleImageChange = (index: number, file: File | null) => {
     const updated = [...images];
     updated[index] = file;
     setImages(updated);
