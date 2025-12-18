@@ -11,10 +11,10 @@ const SIZE_OPTIONS = ["Free Size", "XS", "S", "M", "L", "XL", "XXL", "3XL"];
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
-  const productId = params.id;
+  const productId = params.id as string;
 
   // FORM STATES
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState<any>(null);
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -22,9 +22,9 @@ export default function EditProductPage() {
   const [description, setDescription] = useState("");
 
   // DROPDOWNS
-  const [categories, setCategories] = useState([]);
-  const [types, setTypes] = useState([]);
-  const [subtypes, setSubtypes] = useState([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [types, setTypes] = useState<any[]>([]);
+  const [subtypes, setSubtypes] = useState<any[]>([]);
 
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -32,11 +32,12 @@ export default function EditProductPage() {
   const [selectedSize, setSelectedSize] = useState("");
 
   // IMAGES
-  const [images, setImages] = useState([null, null, null, null]); // NEW images
-  const [existingImages, setExistingImages] = useState([null, null, null, null]); // OLD images
+  const [images, setImages] = useState<(File | null)[]>([null, null, null, null]); // NEW images
+  const [existingImages, setExistingImages] = useState<(File | null)[]>([null, null, null, null]); // OLD images
 
   // FETCH PRODUCT
   useEffect(() => {
+    if (!productId) return;
     api.get(`/products/${productId}`).then((res) => {
       const data = res.data;
       setProduct(data);
@@ -52,12 +53,12 @@ export default function EditProductPage() {
 
       // Set existing images
       setExistingImages([
-        data.img1,
-        data.img2,
-        data.img3,
-        data.img4,
+        data.img1 || null,
+        data.img2 || null,
+        data.img3 || null,
+        data.img4 || null,
       ]);
-    });
+    }).catch(err => console.error("Error loading product", err));
   }, [productId]);
 
   // FETCH CATEGORY, TYPE, SUBTYPE LISTS
@@ -80,7 +81,7 @@ export default function EditProductPage() {
   }, [selectedType]);
 
   // Handle NEW image upload
-  const handleImageChange = (index, file) => {
+  const handleImageChange = (index: number, file: File | null) => {
     const updated = [...images];
     updated[index] = file;
     setImages(updated);
@@ -92,7 +93,7 @@ export default function EditProductPage() {
   };
 
   // Remove existing or new image
-  const removeImage = (index) => {
+  const removeImage = (index: number) => {
     const updatedNew = [...images];
     updatedNew[index] = null;
     setImages(updatedNew);
@@ -107,6 +108,8 @@ export default function EditProductPage() {
     const formData = new FormData();
 
     // Send only updated fields
+    if (!product) return;
+
     if (title !== product.title) formData.append("title", title);
     if (description !== product.description) formData.append("description", description);
     if (price !== product.price) formData.append("price", price);
@@ -321,7 +324,7 @@ existingImages.forEach((img, i) => {
                       type="file"
                       className="hidden"
                       accept="image/*"
-                      onChange={(e) => handleImageChange(i, e.target.files[0])}
+                      onChange={(e) => handleImageChange(i, e.target.files?.[0] || null)}
                     />
                   </label>
                 )}
