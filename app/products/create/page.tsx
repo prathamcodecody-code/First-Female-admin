@@ -46,40 +46,31 @@ const [subtypes, setSubtypes] = useState<any[]>([]);
   // FETCH FUNCTIONS
   // =============================
 
-  const fetchTypes = async (categoryId: string) => {
-    try {
-      console.log("Fetching types for categoryId:", categoryId, "Type:", typeof categoryId);
-      const res = await api.get(`/product-types?categoryId=${categoryId}`);
-      console.log("Fetched Types Response:", res.data);
-      console.log("Types array length:", res.data?.length);
-      setTypes(res.data || []);
-      // Reset dependent dropdowns
-      setSelectedType("");
-      setSelectedSubtype("");
-      setSubtypes([]);
-    } catch (err) {
-      console.error("Error fetching types:", err);
-      console.error("Error details:", err.response?.data);
-      setTypes([]);
-    }
-  };
+  const fetchTypes = async (categoryId: string) => { // Added :string
+  try {
+    const res = await api.get(`/product-types?categoryId=${categoryId}`);
+    setTypes(res.data || []);
+    setSelectedType("");
+    setSelectedSubtype("");
+    setSubtypes([]);
+  } catch (err: any) { // Added :any
+    console.error("Error fetching types:", err);
+    console.error("Error details:", err.response?.data);
+    setTypes([]);
+  }
+};
 
-  const fetchSubtypes = async (typeId: string) => {
-    try {
-      console.log("Fetching subtypes for typeId:", typeId, "Type:", typeof typeId);
-      const res = await api.get(`/product-subtypes?typeId=${typeId}`);
-      console.log("Fetched Subtypes Response:", res.data);
-      console.log("Subtypes array length:", res.data?.length);
-      setSubtypes(res.data || []);
-      // Reset subtype selection
-      setSelectedSubtype("");
-    } catch (err) {
-      console.error("Error fetching subtypes:", err);
-      console.error("Error details:", err.response?.data);
-      setSubtypes([]);
-    }
-  };
-
+const fetchSubtypes = async (typeId: string) => { // Added :string
+  try {
+    const res = await api.get(`/product-subtypes?typeId=${typeId}`);
+    setSubtypes(res.data || []);
+    setSelectedSubtype("");
+  } catch (err: any) { // Added :any
+    console.error("Error fetching subtypes:", err);
+    console.error("Error details:", err.response?.data);
+    setSubtypes([]);
+  }
+};
   // =============================
   // USE EFFECTS
   // =============================
