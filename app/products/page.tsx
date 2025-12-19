@@ -265,7 +265,7 @@ export default function ProductsPage() {
               onClick={() => openPreview(p)}
             >
               <img
-                src={`http://localhost:3030/uploads/products/${p.img1}`}
+                src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${p.img1}`}
                 className="w-24 h-24 object-cover rounded"
               />
 
