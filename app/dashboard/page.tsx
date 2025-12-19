@@ -141,7 +141,7 @@ export default function DashboardPage() {
                 className="flex items-center gap-4 border-b pb-4 last:border-none"
               >
                 <img
-                  src={`http://localhost:3030/uploads/products/${p.img1}`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${p.img1}`}
                   className="w-16 h-16 rounded object-cover"
                 />
 
