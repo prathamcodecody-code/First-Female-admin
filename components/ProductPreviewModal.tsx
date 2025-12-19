@@ -51,7 +51,7 @@ export default function ProductPreviewModal({
                 .map((img, i) => (
                   <img
                     key={i}
-                    src={`http://localhost:3030/uploads/products/${img}`}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${img}`}
                     className="w-full h-44 object-cover rounded-lg border"
                     alt={`Product image ${i + 1}`}
                   />
