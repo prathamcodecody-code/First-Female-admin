@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
+import ProductSeoForm from "./ProductSeoForm";
 
 const SIZE_OPTIONS = ["Free Size", "XS", "S", "M", "L", "XL", "XXL", "3XL"];
 
@@ -184,6 +185,16 @@ existingImages.forEach((img, i) => {
                           onChange={(e) => setDescription(e.target.value)} />
               </div>
 
+    <ProductSeoForm
+  productId={product.id}
+  initialSeo={{
+    slug: product.slug,
+    metaTitle: product.metaTitle,
+    metaDescription: product.metaDescription,
+    metaKeywords: product.metaKeywords,
+  }}
+/>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block mb-1 font-medium">Price</label>
@@ -288,7 +299,7 @@ existingImages.forEach((img, i) => {
                 {existingImages[i] && (
                   <div className="relative">
                     <img
-                      src={`http://localhost:3030/uploads/products/${existingImages[i]}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${existingImages[i]}`}
                       className="w-full h-32 rounded-xl object-cover"
                     />
                     <button
