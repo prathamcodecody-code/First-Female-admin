@@ -3,7 +3,19 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Folder,
+  Package,
+  ShoppingCart,
+  MessageSquare,
+  Percent,
+  Star,
+  Settings,
+  LogOut,
+  Menu,
+    X,
+} from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -12,19 +24,27 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const LinkItem = (href: string, label: string) => (
-    <Link
-      href={href}
-      onClick={() => setOpen(false)} // close on mobile
-      className={`block px-6 py-3 rounded-lg font-medium transition ${
+  const LinkItem = (
+  href: string,
+  label: string,
+  Icon: React.ElementType
+) => (
+  <Link
+    href={href}
+    onClick={() => setOpen(false)}
+    className={`
+      flex items-center gap-3 px-6 py-3 rounded-lg font-medium transition
+      ${
         pathname === href
           ? "bg-brandPink text-white"
           : "text-brandBlack hover:bg-brandPinkLight hover:text-white"
-      }`}
-    >
-      {label}
-    </Link>
-  );
+      }
+    `}
+  >
+    <Icon size={18} />
+    <span>{label}</span>
+  </Link>
+);
 
   return (
     <>
@@ -71,16 +91,17 @@ export default function Sidebar() {
             Admin Panel
           </h1>
 
-          <nav className="space-y-2">
-            {LinkItem("/dashboard", "Dashboard")}
-            {LinkItem("/categories", "Categories")}
-            {LinkItem("/products", "Products")}
-            {LinkItem("/orders", "Orders")}
-            {LinkItem("/feedback", "Feedback")}
-            {LinkItem("/discounts", "Discounts")}
-            {LinkItem("/reviews", "Reviews")}
-            {LinkItem("/settings", "Settings")}
-          </nav>
+          <nav className="space-y-1">
+  {LinkItem("/dashboard", "Dashboard", LayoutDashboard)}
+  {LinkItem("/categories", "Categories", Folder)}
+  {LinkItem("/products", "Products", Package)}
+  {LinkItem("/orders", "Orders", ShoppingCart)}
+  {LinkItem("/feedback", "Feedback", MessageSquare)}
+  {LinkItem("/discounts", "Discounts", Percent)}
+  {LinkItem("/reviews", "Reviews", Star)}
+  {LinkItem("/settings", "Settings", Settings)}
+</nav>
+
         </div>
 
         {/* LOGOUT */}
