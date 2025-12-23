@@ -69,14 +69,15 @@ export default function Sidebar() {
 
       {/* SIDEBAR */}
       <aside
-        className={`
-          fixed top-0 left-0 h-screen w-64 bg-white shadow-lg
-          flex flex-col justify-between z-50
-          transform transition-transform duration-300
-          ${open ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
-        `}
-      >
+  className={`
+    fixed top-0 left-0 h-screen w-64 bg-white
+    border-r flex flex-col justify-between z-50
+    transform transition-transform duration-300
+    ${open ? "translate-x-0" : "-translate-x-full"}
+    md:translate-x-0
+  `}
+>
+
         {/* TOP */}
         <div className="p-6 pt-16 md:pt-6">
           {/* Close button (mobile) */}
