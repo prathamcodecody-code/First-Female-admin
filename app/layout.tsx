@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Admin Panel",
+  title: "Admin Panel | FirstFemale",
   description: "Admin Management Dashboard",
 };
 
@@ -12,9 +12,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      {/* Global background + text color */}
-      <body className="bg-brandCream text-brandBlack">
-        {children}
+      <body className="min-h-screen bg-white text-gray-900 antialiased">
+        {/* App wrapper */}
+        <div className="min-h-screen flex">
+          {children}
+        </div>
       </body>
     </html>
   );
