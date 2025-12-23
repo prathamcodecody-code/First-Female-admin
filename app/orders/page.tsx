@@ -24,14 +24,64 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState<
+  "today" | "yesterday" | "week" | "custom" | ""
+>("");
+
+const [fromDate, setFromDate] = useState<string>("");
+const [toDate, setToDate] = useState<string>("");
+
 
 
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
+
+  const getDateRange = () => {
+  const today = new Date();
+  let from = "";
+  let to = today.toISOString().split("T")[0];
+
+  if (dateFilter === "today") {
+    from = to;
+  }
+
+  if (dateFilter === "yesterday") {
+    const y = new Date(today);
+    y.setDate(y.getDate() - 1);
+    from = y.toISOString().split("T")[0];
+    to = from;
+  }
+
+  if (dateFilter === "week") {
+    const w = new Date(today);
+    w.setDate(w.getDate() - 7);
+    from = w.toISOString().split("T")[0];
+  }
+
+  if (dateFilter === "custom") {
+    from = fromDate;
+    to = toDate;
+  }
+
+  return {
+  from: from ? `${from}T00:00:00` : undefined,
+  to: to ? `${to}T23:59:59` : undefined,
+};
+};
+
+
   const fetchOrders = async () => {
   setLoading(true);
+
+  const { from, to } = getDateRange();
+
   const res = await api.get("/orders", {
-    params: { page, status },
+    params: {
+      page,
+      status,
+      fromDate: from || undefined,
+      toDate: to || undefined,
+    },
   });
 
   setOrders(res.data.orders || []);
@@ -39,9 +89,11 @@ export default function OrdersPage() {
   setLoading(false);
 };
 
+
   useEffect(() => {
-    fetchOrders();
-  }, [page, status]);
+  fetchOrders();
+}, [page, status, dateFilter, fromDate, toDate]);
+
 
   const statusColor = (s: string) =>
     ({
@@ -65,9 +117,12 @@ export default function OrdersPage() {
       <button
         key={s.value}
         onClick={() => {
-          setStatus(s.value);
-          setPage(1);
-        }}
+  setStatus(s.value);
+  setDateFilter("");
+  setFromDate("");
+  setToDate("");
+  setPage(1);
+}}
         className={`px-4 py-2 rounded-lg text-sm font-semibold transition
           ${
             status === s.value
@@ -79,6 +134,87 @@ export default function OrdersPage() {
       </button>
     ))}
   </div>
+<div className="mt-4 flex gap-3 flex-wrap items-center">
+  {[
+    { label: "Today", value: "today" },
+    { label: "Yesterday", value: "yesterday" },
+    { label: "Last 7 Days", value: "week" },
+  ].map((d) => (
+    <button
+  key={d.value}
+  onClick={() => {
+    setDateFilter(d.value as any);
+    setFromDate("");
+    setToDate("");
+    setPage(1);
+  }}
+      className={`px-3 py-2 rounded-lg text-sm font-semibold transition
+        ${
+          dateFilter === d.value
+            ? "bg-brandPink text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-brandPink/20"
+        }`}
+    >
+      {d.label}
+    </button>
+  ))}
+
+  {/* CUSTOM DATE */}
+  <button
+    onClick={() => setDateFilter("custom")}
+    className={`px-3 py-2 rounded-lg text-sm font-semibold transition
+      ${
+        dateFilter === "custom"
+          ? "bg-brandPink text-white"
+          : "bg-gray-100 text-gray-700 hover:bg-brandPink/20"
+      }`}
+  >
+    Custom
+  </button>
+</div>
+{dateFilter === "custom" && (
+  <div className="mt-4 flex flex-wrap gap-4 items-end">
+    <div>
+      <label className="text-xs font-semibold text-gray-600">
+        From
+      </label>
+      <input
+        type="date"
+        className="block border rounded px-3 py-2"
+        value={fromDate}
+        onChange={(e) => setFromDate(e.target.value)}
+      />
+    </div>
+
+    <div>
+      <label className="text-xs font-semibold text-gray-600">
+        To
+      </label>
+      <input
+        type="date"
+        className="block border rounded px-3 py-2"
+        value={toDate}
+        onChange={(e) => setToDate(e.target.value)}
+      />
+    </div>
+
+    <button
+  onClick={() => {
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      fetchOrders(); // force refresh if already on page 1
+    }
+  }}
+      className="px-4 py-2 bg-brandPink text-white rounded-lg"
+      disabled={!fromDate || !toDate}
+    >
+      Apply
+    </button>
+  </div>
+)}
+
+
 
   {/* MOBILE: DROPDOWN */}
   <div className="md:hidden">
@@ -99,6 +235,23 @@ export default function OrdersPage() {
   </div>
 
 </div>
+<div className="md:hidden mt-4">
+  <select
+    className="w-full border p-2 rounded"
+    value={dateFilter}
+    onChange={(e) => {
+      setDateFilter(e.target.value as any);
+      setPage(1);
+    }}
+  >
+    <option value="">All Dates</option>
+    <option value="today">Today</option>
+    <option value="yesterday">Yesterday</option>
+    <option value="week">Last 7 Days</option>
+    <option value="custom">Custom</option>
+  </select>
+</div>
+
 
       {/* ORDERS */}
       <div className="space-y-4">
