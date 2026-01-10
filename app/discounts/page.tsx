@@ -26,15 +26,16 @@ export default function DiscountsPage() {
 
         <div className="space-y-4">
           {products.map((p) => {
-            const hasDiscount = p.discountType === "PERCENT";
             const price = Number(p.price);
-const discountValue = Number(p.discountValue || 0);
+            const discountValue = Number(p.discountValue || 0);
+            const hasDiscount =
+              p.discountType === "PERCENT" && discountValue > 0;
 
-const finalPrice = hasDiscount
-  ? price - (price * discountValue) / 100
-  : price;
+            const finalPrice = hasDiscount
+              ? price - (price * discountValue) / 100
+              : price;
 
-                return (
+            return (
               <div
                 key={p.id}
                 className="flex items-center justify-between bg-white rounded-xl shadow-sm border p-4 hover:shadow-md transition"
@@ -46,9 +47,11 @@ const finalPrice = hasDiscount
                   </h3>
 
                   <div className="flex items-center gap-3 mt-2 text-sm">
-                    <span className="text-gray-400 line-through">
-                      ₹{p.price}
-                    </span>
+                    {hasDiscount && (
+                      <span className="text-gray-400 line-through">
+                        ₹{price.toFixed(0)}
+                      </span>
+                    )}
 
                     <span className="text-lg font-semibold text-brandPink">
                       ₹{finalPrice.toFixed(0)}
@@ -56,7 +59,7 @@ const finalPrice = hasDiscount
 
                     {hasDiscount && (
                       <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">
-                        {p.discountValue}% OFF
+                        {discountValue}% OFF
                       </span>
                     )}
                   </div>
@@ -67,9 +70,7 @@ const finalPrice = hasDiscount
                   <div className="text-sm text-gray-500 text-right">
                     <div>Discount</div>
                     <div className="font-medium">
-                      {hasDiscount
-                        ? `${p.discountValue}%`
-                        : "—"}
+                      {hasDiscount ? `${discountValue}%` : "—"}
                     </div>
                   </div>
 
