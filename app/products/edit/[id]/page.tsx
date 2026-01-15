@@ -5,6 +5,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
 import ProductSeoForm from "./ProductSeoForm";
+import ProductDiscountSection from "@/components/modals/ProductDiscountSection";
 
 const SIZE_OPTIONS = ["Free Size", "XS", "S", "M", "L", "XL", "XXL", "3XL"];
 
@@ -34,14 +35,19 @@ export default function EditProductPage() {
   { id: number; size: string; stock: number }[]
 >([]);
 
+  const [isTrending, setIsTrending] = useState(false);
 
-  // IMAGES
+    // IMAGES
   const [images, setImages] = useState<(File | null)[]>([null, null, null, null]); // NEW images
   const [existingImages, setExistingImages] = useState<(File | null)[]>([null, null, null, null]); // OLD images
+  const [discountType, setDiscountType] = useState("");
+const [discountValue, setDiscountValue] = useState("");
+
 
   // FETCH PRODUCT
   useEffect(() => {
     if (!productId) return;
+    
     api.get(`/products/${productId}`).then((res) => {
       const data = res.data;
       setProduct(data);
@@ -49,9 +55,14 @@ export default function EditProductPage() {
       setTitle(data.title);
       setDescription(data.description);
       setPrice(data.price);
+      setDiscountType(data.discountType || "");
+setDiscountValue(
+  data.discountValue !== null ? String(data.discountValue) : ""
+);
       setStock(data.stock);
       setSelectedCategory(data.categoryId);
       setSelectedType(data.typeId);
+      setIsTrending(Boolean(data.isTrending));
       setSelectedSubtype(data.subtypeId);
       setSizes(
   Array.isArray(data.sizes)
@@ -126,6 +137,18 @@ export default function EditProductPage() {
     if (title !== product.title) formData.append("title", title);
     if (description !== product.description) formData.append("description", description);
     if (price !== product.price) formData.append("price", price);
+    if (discountType !== product.discountType) {
+  formData.append("discountType", discountType || "");
+}
+if (isTrending !== product.isTrending) {
+  formData.append("isTrending", isTrending ? "true" : "false");
+}
+if (
+  String(discountValue) !== String(product.discountValue ?? "")
+) {
+  formData.append("discountValue", discountValue || "");
+}
+
     if (stock !== product.stock) formData.append("stock", stock);
     
     if (selectedCategory !== product.categoryId)
@@ -213,7 +236,47 @@ existingImages.forEach((img, i) => {
                   <input type="number" className="border p-2 rounded w-full bg-brandCream/40"
                          value={price} onChange={(e) => setPrice(e.target.value)} />
                 </div>
+                
+                <ProductDiscountSection
+  price={price}
+  discountType={discountType}
+  discountValue={discountValue}
+  onChange={({ discountType, discountValue }) => {
+    setDiscountType(discountType);
+    setDiscountValue(discountValue);
+  }}
+/>
+
+<div className="flex items-center justify-between border rounded-lg p-3 bg-brandCream/30">
+  <div>
+    <p className="font-medium">Mark as Trending</p>
+    <p className="text-xs text-gray-500">
+      Trending products appear on the homepage
+    </p>
+  </div>
+
+  <label className="relative inline-flex items-center cursor-pointer">
+    <input
+      type="checkbox"
+      checked={isTrending}
+      onChange={(e) => setIsTrending(e.target.checked)}
+      className="sr-only peer"
+    />
+    <div
+      className="
+        w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer
+        peer-checked:bg-brandPink
+        after:content-[''] after:absolute after:top-0.5 after:left-[2px]
+        after:bg-white after:border after:rounded-full after:h-5 after:w-5
+        after:transition-all peer-checked:after:translate-x-full
+      "
+    />
+  </label>
+</div>
+
+
                 <div>
+
                   <label className="block mb-1 font-medium">Stock</label>
                   <input type="number" className="border p-2 rounded w-full bg-brandCream/40"
                          value={stock} onChange={(e) => setStock(e.target.value)} />
