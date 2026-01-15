@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import ProductDiscountSection from "@/components/modals/ProductDiscountSection";
 
 const SIZE_OPTIONS = [
   "Free Size",
@@ -35,6 +36,10 @@ const [subtypes, setSubtypes] = useState<any[]>([]);
   const [selectedType, setSelectedType] = useState("");
   const [selectedSubtype, setSelectedSubtype] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
+
+  const [isTrending, setIsTrending] = useState(false);
+  const [discountType, setDiscountType] = useState("");
+const [discountValue, setDiscountValue] = useState("");
 
   // IMAGES
   const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
@@ -137,6 +142,12 @@ const createProduct = async () => {
   formData.append("categoryId", selectedCategory);
   formData.append("typeId", selectedType);
   formData.append("subtypeId", selectedSubtype);
+  formData.append("isTrending", isTrending ? "true" : "false");
+
+  if (discountType) {
+  formData.append("discountType", discountType);
+  formData.append("discountValue", discountValue);
+}
 
   images.forEach((img, i) => {
     if (img) formData.append(`image${i + 1}`, img);
@@ -203,6 +214,43 @@ const createProduct = async () => {
                     onChange={(e) => setPrice(e.target.value)}
                   />
                 </div>
+
+    <ProductDiscountSection
+  price={price}
+  discountType={discountType}
+  discountValue={discountValue}
+  onChange={({ discountType, discountValue }) => {
+    setDiscountType(discountType);
+    setDiscountValue(discountValue);
+  }}
+/>
+
+<div className="flex items-center justify-between border rounded-lg p-3 bg-brandCream/30">
+  <div>
+    <p className="font-medium">Mark as Trending</p>
+    <p className="text-xs text-gray-500">
+      Trending products appear on the homepage
+    </p>
+  </div>
+
+  <label className="relative inline-flex items-center cursor-pointer">
+    <input
+      type="checkbox"
+      checked={isTrending}
+      onChange={(e) => setIsTrending(e.target.checked)}
+      className="sr-only peer"
+    />
+    <div
+      className="
+        w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer
+        peer-checked:bg-brandPink
+        after:content-[''] after:absolute after:top-0.5 after:left-[2px]
+        after:bg-white after:border after:rounded-full after:h-5 after:w-5
+        after:transition-all peer-checked:after:translate-x-full
+      "
+    ></div>
+  </label>
+</div>
 
                 <div>
                   <label className="block mb-1 font-medium">Stock</label>
