@@ -14,6 +14,7 @@ module.exports = {
         brandCream: "#FFF8E7",
         brandBlack: "#212121",
         brandGray: "#757575",
+        brandPurple: "#9C27B0",
       },
     },
   },
