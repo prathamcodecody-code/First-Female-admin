@@ -3,19 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  LayoutDashboard,
-  Folder,
-  Package,
-  ShoppingCart,
-  MessageSquare,
-  Percent,
-  Star,
-  Settings,
-  LogOut,
-  Menu,
-    X,
-} from "lucide-react";
+import LayoutDashboard from "lucide-react/dist/esm/icons/layout-dashboard";
+import Folder from "lucide-react/dist/esm/icons/folder";
+import Package from "lucide-react/dist/esm/icons/package";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import MessageSquare from "lucide-react/dist/esm/icons/message-square";
+import Percent from "lucide-react/dist/esm/icons/percent";
+import Star from "lucide-react/dist/esm/icons/star";
+import Settings from "lucide-react/dist/esm/icons/settings";
+import Menu from "lucide-react/dist/esm/icons/menu";
+import X from "lucide-react/dist/esm/icons/x";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -99,6 +96,7 @@ export default function Sidebar() {
   {LinkItem("/orders", "Orders", ShoppingCart)}
   {LinkItem("/feedback", "Feedback", MessageSquare)}
   {LinkItem("/discounts", "Discounts", Percent)}
+  {LinkItem("/trending", "Trending", Star)}
   {LinkItem("/reviews", "Reviews", Star)}
   {LinkItem("/settings", "Settings", Settings)}
 </nav>
