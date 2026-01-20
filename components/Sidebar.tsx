@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Percent,
   Star,
+  PersonStanding,
   Settings,
   Menu,
   X,
@@ -95,6 +96,7 @@ export default function Sidebar() {
   {LinkItem("/categories", "Categories", Folder)}
   {LinkItem("/products", "Products", Package)}
   {LinkItem("/orders", "Orders", ShoppingCart)}
+  {LinkItem("/users", "Users", PersonStanding)}          
   {LinkItem("/feedback", "Feedback", MessageSquare)}
   {LinkItem("/discounts", "Discounts", Percent)}
   {LinkItem("/trending", "Trending", Star)}
@@ -151,4 +153,5 @@ export default function Sidebar() {
     </>
   );
 }
+
 
