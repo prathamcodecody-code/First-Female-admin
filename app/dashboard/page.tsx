@@ -6,6 +6,8 @@ import { api } from "@/lib/api";
 import RevenueLineChart from "@/components/charts/RevenueLineChart";
 import OrdersBarChart from "@/components/charts/OrdersBarChart";
 import OrderStatusPie from "@/components/charts/OrderStatusPie";
+import UserStatsCards from "@/components/common/UserStatsCards";
+import UsersLineChart from "@/components/charts/UsersChart";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -40,9 +42,9 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <AdminLayout>
-        <p className="text-center py-24 text-gray-500">
-          Loading dashboard…
-        </p>
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <p className="text-gray-500 animate-pulse text-lg">Loading dashboard…</p>
+        </div>
       </AdminLayout>
     );
   }
@@ -50,109 +52,137 @@ export default function DashboardPage() {
   if (!stats || !charts) {
     return (
       <AdminLayout>
-        <p className="text-center py-24 text-red-500">
-          Failed to load dashboard
-        </p>
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <p className="text-red-500 font-medium">Failed to load dashboard data.</p>
+        </div>
       </AdminLayout>
     );
   }
 
   return (
     <AdminLayout>
-      <div className="max-w-6xl mx-auto w-full space-y-10">
-
+      <div className="max-w-7xl mx-auto w-full space-y-8 p-4">
+        
         {/* ================= HEADER ================= */}
-        <h1 className="text-3xl font-bold text-brandPink">
-          Admin Dashboard
-        </h1>
-
-        {/* ================= STATS ================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          {[
-            { label: "Products", value: stats.products },
-            { label: "Orders", value: stats.totalOrders },
-            { label: "Today Orders", value: stats.todayOrders },
-            { label: "Revenue", value: `₹${stats.revenue}` },
-            { label: "Today Revenue", value: `₹${stats.todayRevenue}` },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-xl shadow-sm p-5 border"
-            >
-              <p className="text-sm text-gray-500">{item.label}</p>
-              <p className="text-2xl font-bold text-brandPink">
-                {item.value}
-              </p>
-            </div>
-          ))}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Admin <span className="text-brandPink">Dashboard</span>
+          </h1>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+  
+  {/* These 3 cards will now take 1 slot each in the 8-column grid */}
+  <UserStatsCards users={stats.users} />
+
+  {/* These 5 cards will follow immediately after */}
+  {[
+    { label: "Products", value: stats.products },
+    { label: "Orders", value: stats.totalOrders },
+    { label: "Today Orders", value: stats.todayOrders },
+    { label: "Revenue", value: `₹${stats.revenue}` },
+    { label: "Today Revenue", value: `₹${stats.todayRevenue}` },
+  ].map((item, i) => (
+    <div
+      key={i}
+      className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 flex flex-col justify-center min-h-[110px]"
+    >
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
+        {item.label}
+      </p>
+      <p className="text-2xl font-bold text-gray-800">
+        {item.value}
+      </p>
+    </div>
+  ))}
+</div>
 
         {/* ================= LOW STOCK ALERT ================= */}
         {lowStockItems.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <h3 className="font-semibold text-red-700 mb-2">
-              Low Stock Alert
-            </h3>
-
-            <ul className="text-sm space-y-1">
+          <div className="bg-red-50 border-l-4 border-red-500 rounded-r-xl p-4 shadow-sm">
+            <div className="flex items-center mb-2">
+              <span className="text-red-600 mr-2">⚠️</span>
+              <h3 className="font-bold text-red-800">Low Stock Alert</h3>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
               {lowStockItems.map((p) => (
-                <li key={p.id}>
-                  {p.title} — <b>{p.stock}</b> left
+                <li key={p.id} className="text-red-700 bg-white/50 p-2 rounded border border-red-100">
+                  {p.title} — <span className="font-bold">{p.stock}</span> units left
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        {/* ================= CHARTS ================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="font-semibold mb-4">
+        {/* ================= CHARTS GRID ================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-gray-700 font-bold mb-6 flex items-center">
+              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+              Users (Last 7 Days)
+            </h3>
+            <div className="h-[300px] w-full">
+               <UsersLineChart data={charts.usersTrend} />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-gray-700 font-bold mb-6 flex items-center">
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
               Revenue (Last 7 Days)
             </h3>
-            <RevenueLineChart data={charts.revenueTrend} />
+            <div className="h-[300px] w-full">
+              <RevenueLineChart data={charts.revenueTrend} />
+            </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="font-semibold mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-gray-700 font-bold mb-6 flex items-center">
+              <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
               Orders (Last 7 Days)
             </h3>
-            <OrdersBarChart data={charts.ordersTrend} />
+            <div className="h-[300px] w-full">
+              <OrdersBarChart data={charts.ordersTrend} />
+            </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="font-semibold mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-gray-700 font-bold mb-6 flex items-center">
+              <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
               Order Status
             </h3>
-            <OrderStatusPie data={charts.orderStatus} />
+            <div className="h-[300px] w-full flex justify-center">
+              <OrderStatusPie data={charts.orderStatus} />
+            </div>
           </div>
         </div>
 
         {/* ================= RECENT PRODUCTS ================= */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            Recent Products
-          </h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-50 bg-gray-50/30">
+            <h2 className="text-lg font-bold text-gray-800">Recent Products</h2>
+          </div>
 
-          <div className="space-y-4">
+          <div className="divide-y divide-gray-100">
             {stats.recentProducts.map((p: any) => (
               <div
                 key={p.id}
-                className="flex items-center gap-4 border-b pb-4 last:border-none"
+                className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
               >
                 <img
                   src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${p.img1}`}
-                  className="w-16 h-16 rounded object-cover"
+                  alt={p.title}
+                  className="w-14 h-14 rounded-lg object-cover border border-gray-100 shadow-sm"
                 />
 
                 <div className="flex-1">
-                  <p className="font-semibold">{p.title}</p>
-                  <p className="text-sm text-gray-500">₹{p.price}</p>
+                  <p className="font-bold text-gray-800 leading-tight">{p.title}</p>
+                  <p className="text-sm text-brandPink font-medium mt-1">₹{p.price}</p>
                 </div>
 
                 <a
                   href={`/products/edit/${p.id}`}
-                  className="text-brandPink font-semibold text-sm"
+                  className="px-4 py-2 text-brandPink font-bold text-xs uppercase tracking-widest border border-brandPink/20 rounded-lg hover:bg-brandPink hover:text-white transition-all"
                 >
                   Edit
                 </a>
