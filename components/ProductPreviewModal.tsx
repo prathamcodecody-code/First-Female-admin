@@ -75,9 +75,36 @@ export default function ProductPreviewModal({
               </p>
             )}
 
-            <p className="text-brandPink font-bold text-xl">
-              ₹ {product.price}
-            </p>
+            {/* PRICE */}
+<div className="space-y-1">
+  <div className="flex items-center gap-3">
+    {/* Final Price */}
+    <p className="text-brandPink font-bold text-2xl">
+      ₹{Number(product.finalPrice ?? product.price).toLocaleString()}
+    </p>
+
+    {/* MRP */}
+    {product.discountType && product.discountValue && (
+      <p className="text-sm text-gray-400 line-through">
+        ₹{Number(product.price).toLocaleString()}
+      </p>
+    )}
+  </div>
+
+  {/* Discount Badge */}
+  {product.discountType && product.discountValue && (
+    <span className="inline-block text-[11px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">
+      {product.discountType === "PERCENT"
+        ? `${product.discountValue}% OFF`
+        : `₹${product.discountValue} OFF`}
+    </span>
+  )}
+</div>
+{product.weight && (
+  <p className="text-sm text-gray-500">
+    Shipping Weight: <b>{product.weight} kg</b>
+  </p>
+)}
 
             <p className="text-brandBlack">
               Total Stock:{" "}
