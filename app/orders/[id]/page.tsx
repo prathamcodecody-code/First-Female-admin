@@ -6,7 +6,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { useParams } from "next/navigation";
 import TrackingTimeline from "@/components/TrackingTimeline";
 
-
+/* ================= STATUS BADGE ================= */
 const StatusBadge = ({ status }: { status: string }) => {
   const colors: any = {
     PENDING: "bg-yellow-100 text-yellow-700",
@@ -17,11 +17,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <span
-      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-        colors[status] || "bg-gray-100 text-gray-600"
-      }`}
-    >
+    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${colors[status]}`}>
       {status}
     </span>
   );
@@ -29,39 +25,67 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
+  const orderId = String(id);
+
   const [order, setOrder] = useState<any>(null);
-  const [status, setStatus] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
-const [updating, setUpdating] = useState(false);
+  const [tracking, setTracking] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState("");
 
-
+  /* ================= FETCH ORDER ================= */
   const fetchOrder = async () => {
-    const res = await api.get(`/orders/${id}`);
+    const res = await api.get(`/admin/orders/${orderId}`);
     setOrder(res.data);
-    setStatus(res.data.status);
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchOrder();
   }, []);
 
-  const updateStatus = async () => {
-  try {
-    setUpdating(true);
-    await api.put(`/orders/${id}/status`, { status });
-    fetchOrder();
-    setShowConfirm(false);
-  } catch {
-    alert("Failed to update order");
-  } finally {
-    setUpdating(false);
-  }
-};
+  /* ================= FETCH TRACKING ================= */
+  useEffect(() => {
+    if (!order?.trackingId) return;
 
-  if (!order) {
+    api
+      .get(`/admin/shipping/track/${orderId}`)
+      .then((res) => setTracking(res.data))
+      .catch(() => setTracking(null));
+  }, [order?.trackingId]);
+
+  /* ================= CONFIRM ORDER ================= */
+  const confirmOrder = async () => {
+    try {
+      setActionLoading(true);
+      setError("");
+      await api.put(`/admin/orders/${orderId}/confirm`);
+      await fetchOrder();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to confirm order");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  /* ================= SHIP ORDER ================= */
+  const shipOrder = async () => {
+    try {
+      setActionLoading(true);
+      setError("");
+      await api.post(`/admin/shipping/delhivery/${orderId}`);
+      await fetchOrder();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Delhivery shipment failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
       <AdminLayout>
-        <p className="py-20 text-center">Loading order...</p>
+        <p className="py-20 text-center">Loading order…</p>
       </AdminLayout>
     );
   }
@@ -71,157 +95,98 @@ const [updating, setUpdating] = useState(false);
       <div className="max-w-6xl mx-auto space-y-8">
 
         {/* HEADER */}
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-brandPink">
-            Order id : {order.id}
+            Order #{order.id}
           </h1>
           <StatusBadge status={order.status} />
         </div>
 
         {/* SUMMARY + ADDRESS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow space-y-1">
+            <h2 className="font-semibold mb-2">Order Summary</h2>
 
-          {/* ORDER SUMMARY */}
-          <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+            <p>Items Total: ₹{order.totalAmount}</p>
+            <p>Shipping: ₹{order.shippingCharge}</p>
+            <p className="font-semibold">
+              Payable: ₹{order.finalAmount}
+            </p>
 
-            <div className="space-y-2 text-sm">
-              <p>
-                <span className="text-gray-500">Total Amount:</span>{" "}
-                <span className="font-semibold text-brandPink">
-                  ₹{order.totalAmount}
-                </span>
-              </p>
-              <p>
-                <span className="text-gray-500">Placed On:</span>{" "}
-                {new Date(order.createdAt).toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          {/* CUSTOMER ADDRESS */}
-          <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Customer Address</h2>
-
-            <div className="text-sm text-gray-700 space-y-1">
-              <p>{order.address?.name}</p>
-              <p>{order.address?.phone}</p>
-              <p>{order.address?.street}</p>
-              <p>
-                {order.address?.city}, {order.address?.state}
-              </p>
-              <p>{order.address?.pincode}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* TRACKING */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Order Tracking</h2>
-          <TrackingTimeline status={order.status} />
-        </div>
-
-        {/* ITEMS */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Items</h2>
-
-          <div className="divide-y">
-            {order.items.map((item: any) => (
-              <div
-                key={item.id}
-                className="py-4 flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-semibold">{item.product.title}</p>
-                  <p className="text-sm text-gray-500">
-                    Qty: {item.quantity} × ₹{item.price}
-                  </p>
-                </div>
-
-                <p className="font-semibold text-brandPink">
-                  ₹{item.quantity * item.price}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* UPDATE STATUS */}
-        <div className="bg-white rounded-xl shadow p-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold mb-1">
-              Update Order Status
-            </h2>
             <p className="text-sm text-gray-500">
-              Change order state as it progresses
+              Weight: {order.totalWeight} kg
+            </p>
+
+            <p className="text-sm">
+              Placed: {new Date(order.createdAt).toLocaleString()}
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <select
-              className="border px-4 py-2 rounded-lg bg-gray-50"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-
-            <button
-              onClick={() => setShowConfirm(true)}
-              className="px-6 py-2 bg-brandPink text-white rounded-lg hover:bg-brandPinkLight"
-            >
-              Update
-            </button>
+          <div className="bg-white p-6 rounded-xl shadow space-y-1">
+            <h2 className="font-semibold mb-2">Customer Address</h2>
+            <p>{order.address?.name}</p>
+            <p>{order.address?.phone}</p>
+            <p>{order.address?.addressLine1 || order.address?.street}</p>
+            <p>
+              {order.address?.city}, {order.address?.state}
+            </p>
+            <p>{order.address?.pincode}</p>
           </div>
-        {showConfirm && (
-  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-    <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-
-      <h3 className="text-lg font-bold mb-2">
-        Confirm Status Change
-      </h3>
-
-      <p className="text-gray-600 mb-6">
-        Change order status to{" "}
-        <span className="font-semibold text-brandPink">
-          {status}
-        </span>
-        ?
-      </p>
-
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => setShowConfirm(false)}
-          className="px-4 py-2 rounded border"
-        >
-          Cancel
-        </button>
-
-<button
-          onClick={updateStatus}   // ✅ FIXED
-          disabled={updating}
-          className={`px-5 py-2 rounded-lg text-white font-semibold transition
-            ${
-              updating
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-brandPink hover:bg-brandPinkLight"
-            }`}
-        >
-          {updating ? "Updating..." : "Confirm Update"}
-        </button>
-
-      </div>
-
-    </div>
-  </div>
-)}
-
         </div>
 
+        {/* SHIPPING ACTIONS */}
+        <div className="bg-white p-6 rounded-xl shadow space-y-3">
+          <h2 className="font-semibold">Shipping</h2>
+
+          {order.status === "PENDING" && (
+            <button
+              disabled={actionLoading}
+              onClick={confirmOrder}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg"
+            >
+              Confirm Order
+            </button>
+          )}
+
+          {order.status === "CONFIRMED" && !order.trackingId && (
+            <button
+              disabled={actionLoading}
+              onClick={shipOrder}
+              className="px-6 py-2 bg-brandPink text-white rounded-lg"
+            >
+              Ship with Delhivery
+            </button>
+          )}
+
+          {order.trackingId && (
+            <p className="text-green-600 text-sm">
+              Shipment created. Waybill: <b>{order.trackingId}</b>
+            </p>
+          )}
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+        </div>
+
+        {/* TRACKING */}
+        {tracking && (
+          <div className="bg-white p-6 rounded-xl shadow">
+            <h2 className="font-semibold mb-4">Shipment Tracking</h2>
+            <TrackingTimeline scans={tracking.scans} />
+          </div>
+        )}
+
+        {/* ITEMS */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="font-semibold mb-4">Items</h2>
+          {order.items.map((item: any) => (
+            <div key={item.id} className="flex justify-between py-2">
+              <span>
+                {item.product.title} × {item.quantity}
+              </span>
+              <span>₹{item.quantity * item.price}</span>
+            </div>
+          ))}
+        </div>
 
       </div>
     </AdminLayout>
