@@ -10,6 +10,27 @@ interface Props {
   }) => void;
 }
 
+function calculateFinalPrice(
+  price: number,
+  discountType?: string,
+  discountValue?: number
+) {
+  if (!discountType || !discountValue) return price;
+
+  if (discountType === "PERCENT") {
+    return Math.max(
+      0,
+      price - (price * discountValue) / 100
+    );
+  }
+
+  if (discountType === "FLAT") {
+    return Math.max(0, price - discountValue);
+  }
+
+  return price;
+}
+
 export default function ProductDiscountSection({
   price,
   discountType,
