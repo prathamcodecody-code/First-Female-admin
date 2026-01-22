@@ -215,7 +215,16 @@ export default function ProductsPage() {
                 </h2>
                 
                 <div className="flex items-center gap-4">
-                  <p className="text-xl font-black text-brandBlack">₹{p.price.toLocaleString()}</p>
+                   <p className="text-xl font-black text-brandBlack">
+    ₹{Number(p.finalPrice).toLocaleString()}
+  </p>
+
+  {/* MRP (only if discounted) */}
+  {p.discountType && p.discountValue && (
+    <p className="text-sm text-gray-400 line-through">
+      ₹{Number(p.price).toLocaleString()}
+    </p>
+  )}
                   <div className="h-4 w-[1px] bg-gray-200"></div>
                   <p className={`text-xs font-bold px-2 py-1 rounded-md ${
                     p.stock === 0 ? "bg-red-50 text-red-600" : p.stock < 5 ? "bg-orange-50 text-orange-600" : "bg-green-50 text-green-600"
