@@ -281,9 +281,19 @@ const [toDate, setToDate] = useState<string>("");
             </div>
 
             <div className="mt-2 text-sm text-brandGray flex justify-between">
-              <span>Total: ₹{o.totalAmount}</span>
-              <span>{new Date(o.createdAt).toLocaleString()}</span>
-            </div>
+  <span className="font-semibold">
+    Payable: ₹{o.finalAmount ?? o.totalAmount}
+  </span>
+  <span>{new Date(o.createdAt).toLocaleString()}</span>
+</div>
+
+<div className="mt-1 text-xs text-gray-500">
+  <div>Items: ₹{o.totalAmount}</div>
+  {o.shippingCharge !== undefined && (
+    <div>Shipping: ₹{o.shippingCharge}</div>
+  )}
+</div>
+
             {/* EDIT BUTTON */}
       <button
   className="mt-4 px-4 py-2 bg-brandPink text-white rounded-lg hover:bg-brandPinkLight"
