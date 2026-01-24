@@ -117,7 +117,10 @@ export default function CreateProductPage() {
     if (!selectedCategory || !selectedType || !selectedSubtype) return alert("Please select all dropdown values");
     if (!title || !price || !stock || sizes.length === 0) return alert("Please fill in all required fields");
     if (!weight || Number(weight) <= 0) return alert("Product weight is required");
-
+    if (estimatedShipping === null) {
+  alert("Estimated shipping could not be calculated");
+  return;
+}
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
@@ -126,6 +129,7 @@ export default function CreateProductPage() {
     formData.append("stock", stock);
     formData.append("sizes", JSON.stringify(sizes));
     formData.append("categoryId", selectedCategory);
+    formData.append("estimatedShipping", String(estimatedShipping));
     formData.append("typeId", selectedType);
     formData.append("subtypeId", selectedSubtype);
     formData.append("isTrending", isTrending ? "true" : "false");
