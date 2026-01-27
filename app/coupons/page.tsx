@@ -66,28 +66,28 @@ export default function AdminCouponsPage() {
                       {c.isActive ? "Active" : "Disabled"}
                     </span>
                   </td>
-                  
-                    <button
-                      onClick={async () => {
-                        await api.put(`/admin/coupons/${c.id}/toggle`);
-                        loadCoupons();
-                      }}
-                      className="text-xs text-orange-600"
-                    >
-                      Toggle
-                    </button>
+                  <td className="p-3 flex gap-3 justify-center"> {/* ✅ Added opening tag */}
+  <button
+    onClick={async () => {
+      await api.put(`/admin/coupons/${c.id}/toggle`);
+      loadCoupons();
+    }}
+    className="text-xs text-orange-600 font-medium hover:underline"
+  >
+    Toggle
+  </button>
 
-                    <button
-                      onClick={async () => {
-                        if (!confirm("Delete coupon?")) return;
-                        await api.delete(`/admin/coupons/${c.id}`);
-                        loadCoupons();
-                      }}
-                      className="text-xs text-red-600"
-                    >
-                      Delete
-                    </button>
-                  </td>
+  <button
+    onClick={async () => {
+      if (!confirm("Delete coupon?")) return;
+      await api.delete(`/admin/coupons/${c.id}`);
+      loadCoupons();
+    }}
+    className="text-xs text-red-600 font-medium hover:underline"
+  >
+    Delete
+  </button>
+</td>
                 </tr>
               ))}
             </tbody>
@@ -97,4 +97,5 @@ export default function AdminCouponsPage() {
     </AdminLayout>
   );
 }
+
 
