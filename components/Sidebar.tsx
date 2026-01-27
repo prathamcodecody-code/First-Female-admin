@@ -15,6 +15,7 @@ import {
   Settings,
   Menu,
   X,
+  SplinePointer,
 } from "lucide-react";
 export default function Sidebar() {
   const pathname = usePathname();
@@ -95,6 +96,7 @@ export default function Sidebar() {
   {LinkItem("/dashboard", "Dashboard", LayoutDashboard)}
   {LinkItem("/categories", "Categories", Folder)}
   {LinkItem("/products", "Products", Package)}
+  {LinkItem("/coupons", "coupons", SplinePointer)}
   {LinkItem("/orders", "Orders", ShoppingCart)}
   {LinkItem("/users", "Users", PersonStanding)}          
   {LinkItem("/feedback", "Feedback", MessageSquare)}
@@ -153,5 +155,6 @@ export default function Sidebar() {
     </>
   );
 }
+
 
 
