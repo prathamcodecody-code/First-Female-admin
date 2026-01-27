@@ -66,14 +66,7 @@ export default function AdminCouponsPage() {
                       {c.isActive ? "Active" : "Disabled"}
                     </span>
                   </td>
-                  <td className="p-3 flex gap-2">
-                    <Link
-                      href={`/coupons/edit/${c.id}`}
-                      className="text-blue-600 text-xs"
-                    >
-                      Edit
-                    </Link>
-
+                  
                     <button
                       onClick={async () => {
                         await api.put(`/admin/coupons/${c.id}/toggle`);
@@ -104,3 +97,4 @@ export default function AdminCouponsPage() {
     </AdminLayout>
   );
 }
+
