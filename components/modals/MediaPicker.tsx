@@ -13,10 +13,12 @@ export default function MediaPicker({
   value = [],
   onChange,
   multiple = true,
+  accept,
 }: {
   value: number[];
   onChange: (ids: number[]) => void;
   multiple?: boolean;
+  accept?: string[]; // ✅ ADD THIS
 }) {
   const [media, setMedia] = useState<Media[]>([]);
   const [uploading, setUploading] = useState(false);
