@@ -111,6 +111,7 @@ export default function CreateProductPage() {
     fd.append("categoryId", selectedCategory);
     fd.append("typeId", selectedType);
     fd.append("subtypeId", selectedSubtype);
+    if (selectedSeason) fd.append("seasonId", selectedSeason);
     fd.append("sizes", JSON.stringify(sizes));
     fd.append("colors", JSON.stringify(colors));
     fd.append("fabrics", JSON.stringify(fabrics));
@@ -144,7 +145,7 @@ export default function CreateProductPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* LEFT COLUMN: FORM DATA */}
+          {/* LEFT COLUMN */}
           <div className="lg:col-span-8 space-y-10">
             <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm space-y-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack border-b border-gray-50 pb-4">Essential Details</h2>
@@ -178,9 +179,8 @@ export default function CreateProductPage() {
             </section>
           </div>
 
-          {/* RIGHT COLUMN: MEDIA & PRICING */}
+          {/* RIGHT COLUMN */}
           <div className="lg:col-span-4 space-y-10">
-            {/* GALLERY AT TOP */}
             <section className="bg-white border border-gray-100 p-6 rounded-sm shadow-sm">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack mb-6">Gallery</h2>
               <div className="grid grid-cols-2 gap-4">
@@ -202,7 +202,6 @@ export default function CreateProductPage() {
               </div>
             </section>
 
-            {/* PRICING INSIGHT BELOW IMAGES */}
             <section className="bg-brandBlack text-white p-8 rounded-sm shadow-2xl space-y-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] border-b border-white/10 pb-4">Pricing Insight</h2>
               <div className="space-y-4">
@@ -215,7 +214,6 @@ export default function CreateProductPage() {
               </div>
             </section>
 
-            {/* LOGISTICS */}
             <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm space-y-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack">Logistics</h2>
               <div className="space-y-4">
@@ -231,6 +229,13 @@ export default function CreateProductPage() {
                   <option value="">Subtype</option>
                   {subtypes.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
                 </select>
+                
+                {/* RESTORED SEASON SELECT */}
+                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedSeason} onChange={e => setSelectedSeason(e.target.value)}>
+                  <option value="">Select Season</option>
+                  {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+
                 <div className="pt-6 border-t border-gray-50 space-y-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Stock: {totalStock}</p>
                     <div className="grid grid-cols-2 gap-2">
