@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -11,77 +11,83 @@ const SIZE_OPTIONS = ["Free Size", "XS", "S", "M", "L", "XL", "XXL", "3XL"];
 export default function CreateProductPage() {
   const router = useRouter();
 
-  // FORM STATES
+  /* ================= FORM STATES ================= */
   const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [weight, setWeight] = useState("");
+  const [isTrending, setIsTrending] = useState(false);
+  const [freeShipping, setFreeShipping] = useState(false);
+  const [discountType, setDiscountType] = useState("");
+  const [discountValue, setDiscountValue] = useState("");
 
-  // DROPDOWN DATA
+  /* ================= DROPDOWNS & ATTRIBUTES ================= */
   const [categories, setCategories] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
   const [subtypes, setSubtypes] = useState<any[]>([]);
+  const [seasons, setSeasons] = useState<any[]>([]);
 
-  // SELECTED VALUES
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedSubtype, setSelectedSubtype] = useState("");
-  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedSeason, setSelectedSeason] = useState("");
 
-  const [isTrending, setIsTrending] = useState(false);
-  const [discountType, setDiscountType] = useState("");
-  const [discountValue, setDiscountValue] = useState("");
-  const [weight, setWeight] = useState("");
+  const [colors, setColors] = useState<number[]>([]);
+  const [fabrics, setFabrics] = useState<number[]>([]);
+  const [occasions, setOccasions] = useState<number[]>([]);
+  const [fits, setFits] = useState<number[]>([]);
+  const [sleeves, setSleeves] = useState<number[]>([]);
+  const [patterns, setPatterns] = useState<number[]>([]);
 
-  // IMAGES
+  const [colorList, setColorList] = useState<any[]>([]);
+  const [fabricList, setFabricList] = useState<any[]>([]);
+  const [occasionList, setOccasionList] = useState<any[]>([]);
+  const [fitList, setFitList] = useState<any[]>([]);
+  const [sleeveList, setSleeveList] = useState<any[]>([]);
+  const [patternList, setPatternList] = useState<any[]>([]);
+
+  const [sizes, setSizes] = useState<{ size: string; stock: number }[]>([]);
   const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
-  const [sizes, setSizes] = useState<{ size: string; stock: number; price?: number }[]>([]);
 
-  // FETCH FUNCTIONS
-  const fetchTypes = async (categoryId: string) => {
-    try {
-      const res = await api.get(`/product-types?categoryId=${categoryId}`);
-      setTypes(res.data || []);
-      setSelectedType("");
-      setSelectedSubtype("");
-      setSubtypes([]);
-    } catch (err: any) {
-      console.error("Error fetching types:", err);
-      setTypes([]);
-    }
-  };
+  const totalStock = useMemo(() => sizes.reduce((sum, s) => sum + Number(s.stock || 0), 0), [sizes]);
 
-  const fetchSubtypes = async (typeId: string) => {
-    try {
-      const res = await api.get(`/product-subtypes?typeId=${typeId}`);
-      setSubtypes(res.data || []);
-      setSelectedSubtype("");
-    } catch (err: any) {
-      console.error("Error fetching subtypes:", err);
-      setSubtypes([]);
-    }
-  };
-
+  /* ================= FETCHING ================= */
   useEffect(() => {
-    api.get("/categories").then((res) => setCategories(res.data)).catch(err => console.error(err));
+    api.get("/categories").then(r => setCategories(r.data));
+    api.get("/attributes/seasons").then(r => setSeasons(r.data));
+    api.get("/attributes/colors").then(r => setColorList(r.data));
+    api.get("/attributes/fabrics").then(r => setFabricList(r.data));
+    api.get("/attributes/occasions").then(r => setOccasionList(r.data));
+    api.get("/attributes/fits").then(r => setFitList(r.data));
+    api.get("/attributes/sleeves").then(r => setSleeveList(r.data));
+    api.get("/attributes/patterns").then(r => setPatternList(r.data));
   }, []);
 
   useEffect(() => {
-    if (!selectedCategory) {
-      setTypes([]);
-      setSubtypes([]);
-      return;
-    }
-    fetchTypes(selectedCategory);
+    if (!selectedCategory) return;
+    api.get(`/product-types?categoryId=${selectedCategory}`).then(r => {
+      setTypes(r.data);
+      setSelectedType("");
+      setSelectedSubtype("");
+    });
   }, [selectedCategory]);
 
   useEffect(() => {
-    if (!selectedType) {
-      setSubtypes([]);
-      return;
-    }
-    fetchSubtypes(selectedType);
+    if (!selectedType) return;
+    api.get(`/product-subtypes?typeId=${selectedType}`).then(r => setSubtypes(r.data));
   }, [selectedType]);
+
+  const estimatedPricing = useMemo(() => {
+    const p = Number(price);
+    const dv = Number(discountValue || 0);
+    let sellingPrice = p;
+    if (discountType === "PERCENT") sellingPrice = Math.max(0, p - (p * dv) / 100);
+    else if (discountType === "FLAT") sellingPrice = Math.max(0, p - dv);
+
+    const kg = Math.max(Number(weight), 0.5);
+    const shipping = 80 + Math.max(0, Math.ceil((kg - 0.5) / 0.5)) * 30;
+    return { shipping, profit: sellingPrice - shipping, final: sellingPrice };
+  }, [price, weight, discountType, discountValue]);
 
   const handleImageChange = (index: number, file: File | null) => {
     const updated = [...images];
@@ -89,59 +95,34 @@ export default function CreateProductPage() {
     setImages(updated);
   };
 
-  function calculateFinalPrice(price: number, discountType?: string, discountValue?: number) {
-    if (!discountType || !discountValue) return price;
-    if (discountType === "PERCENT") return Math.max(0, price - (price * discountValue) / 100);
-    if (discountType === "FLAT") return Math.max(0, price - discountValue);
-    return price;
-  }
-
-  const [estimatedShipping, setEstimatedShipping] = useState<number | null>(null);
-  const [profitPreview, setProfitPreview] = useState<number | null>(null);
-
-  const estimatePricing = () => {
-    if (!price || !weight) return;
-    const basePrice = Number(price);
-    const discountVal = Number(discountValue || 0);
-    const sellingPrice = calculateFinalPrice(basePrice, discountType, discountVal);
-    const kg = Math.max(Number(weight), 0.5);
-    let shipping = 80;
-    if (kg > 0.5) shipping += Math.ceil((kg - 0.5) / 0.5) * 30;
-    setEstimatedShipping(shipping);
-    setProfitPreview(sellingPrice - shipping);
+  const toggleAttribute = (list: number[], setList: (v: number[]) => void, id: number) => {
+    if (list.includes(id)) setList(list.filter(item => item !== id));
+    else setList([...list, id]);
   };
 
-  useEffect(() => { estimatePricing(); }, [price, weight, discountType, discountValue]);
-
   const createProduct = async () => {
-    if (!selectedCategory || !selectedType || !selectedSubtype) return alert("Please select all dropdown values");
-    if (!title || !price || !stock || sizes.length === 0) return alert("Please fill in all required fields");
-    if (!weight || Number(weight) <= 0) return alert("Product weight is required");
-    if (estimatedShipping === null) {
-  alert("Estimated shipping could not be calculated");
-  return;
-}
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("price", price);
-    formData.append("weight", weight);
-    formData.append("stock", stock);
-    formData.append("sizes", JSON.stringify(sizes));
-    formData.append("categoryId", selectedCategory);
-    formData.append("estimatedShipping", String(estimatedShipping));
-    formData.append("typeId", selectedType);
-    formData.append("subtypeId", selectedSubtype);
-    formData.append("isTrending", isTrending ? "true" : "false");
-    if (discountType) {
-      formData.append("discountType", discountType);
-      formData.append("discountValue", discountValue);
-    }
-    images.forEach((img, i) => { if (img) formData.append(`image${i + 1}`, img); });
+    if (!title || !price || !weight) return alert("Missing Basic Fields");
+    const fd = new FormData();
+    fd.append("title", title);
+    fd.append("description", description);
+    fd.append("price", price);
+    fd.append("weight", weight);
+    fd.append("stock", String(totalStock));
+    fd.append("categoryId", selectedCategory);
+    fd.append("typeId", selectedType);
+    fd.append("subtypeId", selectedSubtype);
+    fd.append("sizes", JSON.stringify(sizes));
+    fd.append("colors", JSON.stringify(colors));
+    fd.append("fabrics", JSON.stringify(fabrics));
+    fd.append("occasions", JSON.stringify(occasions));
+    fd.append("fits", JSON.stringify(fits));
+    fd.append("sleeves", JSON.stringify(sleeves));
+    fd.append("patterns", JSON.stringify(patterns));
+    images.forEach((img, i) => img && fd.append(`image${i + 1}`, img));
 
     try {
-      await api.post("/products", formData, { headers: { "Content-Type": "multipart/form-data" } });
-      alert("Product created successfully!");
+      await api.post("/products", fd);
+      alert("Product Created!");
       router.push("/products");
     } catch (err) {
       alert("Error creating product");
@@ -150,289 +131,143 @@ export default function CreateProductPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-6xl mx-auto pb-10">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto pb-20 px-6">
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-brandBlack">Add New Product</h1>
-            <p className="text-brandGray">Fill in the details to list a new item in your store</p>
+            <h1 className="text-4xl font-black italic font-serif text-brandBlack uppercase tracking-tighter">Add New Product</h1>
+            <p className="text-[10px] font-black text-brandPink uppercase tracking-[0.3em] mt-2">Create a new canvas entry</p>
           </div>
-          <button
-            type="button"
-            onClick={createProduct}
-            className="px-8 py-3 rounded-xl text-white bg-brandPink hover:bg-brandPink/90 shadow-lg shadow-brandPink/20 transition-all font-semibold"
-          >
+          <button onClick={createProduct} className="px-10 py-4 bg-brandBlack text-white rounded-sm font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl hover:bg-brandPink transition-all">
             Save Product
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* LEFT SIDE — PRODUCT DETAILS */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Basic Details */}
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brandBlack mb-6 flex items-center gap-2">
-                <span className="w-2 h-6 bg-brandPink rounded-full"></span>
-                Basic Details
-              </h2>
-
-              <div className="space-y-5">
-                <div>
-                  <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Product Title</label>
-                  <input
-                    className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brandPink/20 focus:border-brandPink outline-none transition-all"
-                    placeholder="e.g. Silk Floral Summer Dress"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Description</label>
-                  <textarea
-                    className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brandPink/20 focus:border-brandPink outline-none transition-all"
-                    rows={4}
-                    placeholder="Describe the material, fit, and style..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* LEFT COLUMN: FORM DATA */}
+          <div className="lg:col-span-8 space-y-10">
+            <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm space-y-6">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack border-b border-gray-50 pb-4">Essential Details</h2>
+              <div className="space-y-6">
+                <input className="w-full bg-gray-50 border-none px-4 py-3 text-sm font-bold focus:ring-1 focus:ring-brandPink outline-none" placeholder="Product Title" value={title} onChange={e => setTitle(e.target.value)} />
+                <textarea className="w-full bg-gray-50 border-none px-4 py-4 text-sm font-medium focus:ring-1 focus:ring-brandPink outline-none" rows={4} placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Base Price (₹)</label>
-                    <input
-                      type="number"
-                      className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brandPink/20 focus:border-brandPink outline-none transition-all"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                    />
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Base Price (₹)</label>
+                    <input type="number" className="w-full bg-gray-50 border-none px-4 py-3 font-bold text-sm" value={price} onChange={e => setPrice(e.target.value)} />
                   </div>
-                  <div>
-                    <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Total Stock</label>
-                    <input
-                      type="number"
-                      className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brandPink/20 focus:border-brandPink outline-none transition-all"
-                      value={stock}
-                      onChange={(e) => setStock(e.target.value)}
-                    />
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Weight (kg)</label>
+                    <input type="number" step="0.01" className="w-full bg-gray-50 border-none px-4 py-3 font-bold text-sm" value={weight} onChange={e => setWeight(e.target.value)} />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                   <ProductDiscountSection
-                    price={price}
-                    discountType={discountType}
-                    discountValue={discountValue}
-                    onChange={({ discountType, discountValue }) => {
-                      setDiscountType(discountType);
-                      setDiscountValue(discountValue);
-                    }}
-                  />
-                  <div>
-                    <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Weight (kg)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brandPink/20 focus:border-brandPink outline-none transition-all"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                    />
-                  </div>
-                </div>
+                <ProductDiscountSection price={price} discountType={discountType} discountValue={discountValue} onChange={({ discountType, discountValue }) => { setDiscountType(discountType); setDiscountValue(discountValue); }} />
               </div>
-            </div>
+            </section>
 
-            {/* CATEGORY MAPPING */}
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brandBlack mb-6 flex items-center gap-2">
-                <span className="w-2 h-6 bg-brandPurple rounded-full"></span>
-                Categorization
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Category</label>
-                  <select
-                    className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:ring-2 focus:ring-brandPink/20 outline-none"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Type</label>
-                  <select
-                    className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:ring-2 focus:ring-brandPink/20 outline-none disabled:opacity-50"
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                    disabled={!selectedCategory || types.length === 0}
-                  >
-                    <option value="">Select Type</option>
-                    {types.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-1.5 text-sm font-semibold text-brandBlack">Subtype</label>
-                  <select
-                    className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:ring-2 focus:ring-brandPink/20 outline-none disabled:opacity-50"
-                    value={selectedSubtype}
-                    onChange={(e) => setSelectedSubtype(e.target.value)}
-                    disabled={!selectedType || subtypes.length === 0}
-                  >
-                    <option value="">Select Subtype</option>
-                    {subtypes.map((st) => (
-                      <option key={st.id} value={st.id}>{st.name}</option>
-                    ))}
-                  </select>
-                </div>
+            <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm space-y-10">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack border-b border-gray-50 pb-4">Style Attributes</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                <AttributeWrapper title="Colors" items={colorList} selected={colors} toggle={(id:any) => toggleAttribute(colors, setColors, id)} />
+                <AttributeWrapper title="Fabrics" items={fabricList} selected={fabrics} toggle={(id:any) => toggleAttribute(fabrics, setFabrics, id)} />
+                <AttributeWrapper title="Occasions" items={occasionList} selected={occasions} toggle={(id:any) => toggleAttribute(occasions, setOccasions, id)} />
+                <AttributeWrapper title="Fits" items={fitList} selected={fits} toggle={(id:any) => toggleAttribute(fits, setFits, id)} />
+                <AttributeWrapper title="Sleeves" items={sleeveList} selected={sleeves} toggle={(id:any) => toggleAttribute(sleeves, setSleeves, id)} />
+                <AttributeWrapper title="Patterns" items={patternList} selected={patterns} toggle={(id:any) => toggleAttribute(patterns, setPatterns, id)} />
               </div>
-            </div>
-
-            {/* SIZES */}
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brandBlack mb-6">Inventory by Size</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {SIZE_OPTIONS.map((size) => {
-                  const existing = sizes.find((s) => s.size === size);
-                  return (
-                    <div key={size} className={`border rounded-2xl p-4 transition-all ${existing ? 'border-brandPink bg-brandPink/5' : 'border-gray-100 bg-gray-50'}`}>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="w-5 h-5 accent-brandPink"
-                          checked={!!existing}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSizes((prev) => [...prev, { size, stock: 1 }]);
-                            } else {
-                              setSizes((prev) => prev.filter((s) => s.size !== size));
-                            }
-                          }}
-                        />
-                        <span className={`font-bold ${existing ? 'text-brandPink' : 'text-brandGray'}`}>{size}</span>
-                      </label>
-                      {existing && (
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="Stock"
-                          value={existing.stock}
-                          onChange={(e) => {
-                            const stock = Number(e.target.value);
-                            setSizes((prev) => prev.map((s) => s.size === size ? { ...s, stock } : s));
-                          }}
-                          className="mt-3 w-full border border-brandPink/20 p-2 rounded-lg bg-white text-sm focus:outline-none"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            </section>
           </div>
 
-          {/* RIGHT SIDE — IMAGES & INSIGHTS */}
-          <div className="space-y-6">
-            
-            {/* PRICING INSIGHT */}
-            <div className="bg-brandBlack text-white rounded-2xl p-6 shadow-xl">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                💰 Pricing Insight
-              </h2>
-              {!price || !weight ? (
-                <p className="text-brandGray text-sm">Enter price and weight to see profit analysis.</p>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-brandGray">MRP</span>
-                    <span className="font-medium">₹{price}</span>
-                  </div>
-                  {discountType && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-brandGray">Discount</span>
-                      <span className="text-green-400 font-medium">
-                        {discountType === "PERCENT" ? `-${discountValue}%` : `-₹${discountValue}`}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center border-t border-white/10 pt-4">
-                    <span className="text-sm">Final Sale Price</span>
-                    <span className="text-xl font-bold text-brandPinkLight">
-                      ₹{calculateFinalPrice(Number(price), discountType, Number(discountValue))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-brandGray">Est. Shipping</span>
-                    <span className="text-orange-300">₹{estimatedShipping}</span>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-xl mt-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold">Estimated Profit</span>
-                      <span className={`text-xl font-black ${profitPreview && profitPreview >= 0 ? "text-green-400" : "text-red-400"}`}>
-                        ₹{profitPreview}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* IMAGES */}
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brandBlack mb-4">Gallery</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {images.map((img, index) => (
-                  <div key={index} className="relative group">
-                    <label className="aspect-square border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer bg-gray-50 hover:bg-brandCream/50 hover:border-brandPink/50 transition-all overflow-hidden">
-                      {img ? (
-                        <img src={URL.createObjectURL(img)} className="w-full h-full object-cover" alt="Preview" />
-                      ) : (
-                        <div className="text-center p-2">
-                          <span className="text-2xl text-gray-300 group-hover:text-brandPink">+</span>
-                          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 group-hover:text-brandPink">Img {index + 1}</p>
-                        </div>
-                      )}
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(index, e.target.files?.[0] || null)} />
-                    </label>
-                    {img && (
-                      <button
-                        type="button"
-                        onClick={() => handleImageChange(index, null)}
-                        className="absolute -top-2 -right-2 bg-brandRed text-white w-7 h-7 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
-                      >
-                        ×
-                      </button>
+          {/* RIGHT COLUMN: MEDIA & PRICING */}
+          <div className="lg:col-span-4 space-y-10">
+            {/* GALLERY AT TOP */}
+            <section className="bg-white border border-gray-100 p-6 rounded-sm shadow-sm">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack mb-6">Gallery</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className="aspect-[3/4] relative bg-gray-50 rounded-sm overflow-hidden border-2 border-dashed border-gray-100 group transition-all hover:border-brandPink/30">
+                    {images[i] ? (
+                      <>
+                        <img src={URL.createObjectURL(images[i]!)} className="w-full h-full object-cover" alt="Preview" />
+                        <button type="button" onClick={() => handleImageChange(i, null)} className="absolute top-2 right-2 bg-brandBlack text-white w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100">×</button>
+                      </>
+                    ) : (
+                      <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-all">
+                        <span className="text-xl text-gray-200 group-hover:text-brandPink">+</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={e => handleImageChange(i, e.target.files?.[0] || null)} />
+                      </label>
                     )}
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* TRENDING TOGGLE */}
-            <div className="bg-brandCream/50 border border-brandPink/10 rounded-2xl p-5 flex items-center justify-between">
-              <div>
-                <p className="font-bold text-brandBlack">Trending Item</p>
-                <p className="text-xs text-brandGray">Show on homepage</p>
+            {/* PRICING INSIGHT BELOW IMAGES */}
+            <section className="bg-brandBlack text-white p-8 rounded-sm shadow-2xl space-y-6">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] border-b border-white/10 pb-4">Pricing Insight</h2>
+              <div className="space-y-4">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400"><span>Final Sale Price</span><span>₹{estimatedPricing.final}</span></div>
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400"><span>Est. Shipping</span><span className="text-orange-400">₹{estimatedPricing.shipping}</span></div>
+                <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                  <span className="text-xs font-black uppercase tracking-[0.2em]">Net Profit</span>
+                  <span className={`text-2xl font-black italic font-serif ${estimatedPricing.profit >= 0 ? "text-green-400" : "text-rose-500"}`}>₹{estimatedPricing.profit}</span>
+                </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={isTrending} onChange={(e) => setIsTrending(e.target.checked)} className="sr-only peer" />
-                <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-brandPink after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-6"></div>
-              </label>
-            </div>
+            </section>
 
+            {/* LOGISTICS */}
+            <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm space-y-6">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack">Logistics</h2>
+              <div className="space-y-4">
+                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}>
+                  <option value="">Category</option>
+                  {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                </select>
+                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedType} onChange={e => setSelectedType(e.target.value)} disabled={!selectedCategory}>
+                  <option value="">Type</option>
+                  {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedSubtype} onChange={e => setSelectedSubtype(e.target.value)} disabled={!selectedType}>
+                  <option value="">Subtype</option>
+                  {subtypes.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
+                </select>
+                <div className="pt-6 border-t border-gray-50 space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Stock: {totalStock}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {SIZE_OPTIONS.map(size => {
+                            const existing = sizes.find(s => s.size === size);
+                            return (
+                                <div key={size} className={`p-3 border rounded-sm transition-all ${existing ? 'border-brandPink bg-pink-50' : 'border-gray-50 bg-gray-50 opacity-60'}`}>
+                                    <label className="flex items-center gap-2 text-[9px] font-black uppercase tracking-tighter cursor-pointer">
+                                        <input type="checkbox" className="accent-brandPink" checked={!!existing} onChange={e => e.target.checked ? setSizes([...sizes, { size, stock: 1 }]) : setSizes(sizes.filter(s => s.size !== size))} /> {size}
+                                    </label>
+                                    {existing && <input type="number" className="w-full mt-2 border-b border-brandPink/20 bg-transparent text-[11px] font-black outline-none" value={existing.stock} onChange={e => setSizes(sizes.map(s => s.size === size ? { ...s, stock: Number(e.target.value) } : s))} />}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </div>
     </AdminLayout>
+  );
+}
+
+function AttributeWrapper({ title, items, selected, toggle }: any) {
+  if (!items.length) return null;
+  return (
+    <div className="space-y-4">
+      <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.3em]">{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item: any) => (
+          <button key={item.id} type="button" onClick={() => toggle(item.id)} className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${selected.includes(item.id) ? "bg-brandPink text-white border-brandPink shadow-md" : "bg-white border-gray-100 text-gray-400 hover:border-brandPink"}`}>
+            {item.name}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
