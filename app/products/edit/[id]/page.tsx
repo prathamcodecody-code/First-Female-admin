@@ -221,12 +221,12 @@ export default function EditProductPage() {
             <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm space-y-10">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack border-b border-gray-50 pb-4">Style Attributes</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
-                <AttributeWrapper title="Colors" items={colorList} selected={colors} toggle={(id) => toggleAttribute(colors, setColors, id)} />
-                <AttributeWrapper title="Fabrics" items={fabricList} selected={fabrics} toggle={(id) => toggleAttribute(fabrics, setFabrics, id)} />
-                <AttributeWrapper title="Occasions" items={occasionList} selected={occasions} toggle={(id) => toggleAttribute(occasions, setOccasions, id)} />
-                <AttributeWrapper title="Fits" items={fitList} selected={fits} toggle={(id) => toggleAttribute(fits, setFits, id)} />
-                <AttributeWrapper title="Sleeves" items={sleeveList} selected={sleeves} toggle={(id) => toggleAttribute(sleeves, setSleeves, id)} />
-                <AttributeWrapper title="Patterns" items={patternList} selected={patterns} toggle={(id) => toggleAttribute(patterns, setPatterns, id)} />
+                <AttributeWrapper title="Colors" items={colorList} selected={colors} toggle={(id:any) => toggleAttribute(colors, setColors, id)} />
+                <AttributeWrapper title="Fabrics" items={fabricList} selected={fabrics} toggle={(id:any) => toggleAttribute(fabrics, setFabrics, id)} />
+                <AttributeWrapper title="Occasions" items={occasionList} selected={occasions} toggle={(id:any) => toggleAttribute(occasions, setOccasions, id)} />
+                <AttributeWrapper title="Fits" items={fitList} selected={fits} toggle={(id:any) => toggleAttribute(fits, setFits, id)} />
+                <AttributeWrapper title="Sleeves" items={sleeveList} selected={sleeves} toggle={(id:any) => toggleAttribute(sleeves, setSleeves, id)} />
+                <AttributeWrapper title="Patterns" items={patternList} selected={patterns} toggle={(id:any) => toggleAttribute(patterns, setPatterns, id)} />
               </div>
             </section>
 
