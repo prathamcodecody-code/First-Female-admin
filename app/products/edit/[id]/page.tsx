@@ -171,7 +171,7 @@ export default function EditProductPage() {
     });
 
     try {
-      await api.put(`/products/${productId}`, formData);
+      await api.patch(`/products/${productId}`, formData);
       alert("Product updated!");
       router.push("/products");
     } catch (err) {
@@ -365,3 +365,4 @@ function AttributeWrapper({ title, items, selected, toggle }: any) {
     </div>
   );
 }
+
