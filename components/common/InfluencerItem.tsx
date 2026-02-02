@@ -35,6 +35,18 @@ export default function InfluencerItem({
 
   /* ---------------- product fetch ---------------- */
 
+function normalizeInstagramUrl(url: string) {
+  if (!url) return null;
+
+  try {
+    const clean = url.split("?")[0];
+    return clean.endsWith("/") ? clean : clean + "/";
+  } catch {
+    return null;
+  }
+}
+
+
   useEffect(() => {
     if (!item.productId) {
       setProduct(null);
@@ -69,20 +81,22 @@ export default function InfluencerItem({
   }
 
   const selectProduct = (p: any) => {
-    onChange({ productId: p.id }); // ✅ single source of truth
+    onChange({ productId: p.id });
     setSearch("");
     setResults([]);
   };
 
   const clearProduct = () => {
-    onChange({ productId: null }); // ✅ product state will auto-reset
+    onChange({ productId: null });
   };
 
   /* ---------------- validation ---------------- */
 
   const hasMedia =
-    (item.mediaType === "UPLOAD" && item.mediaId) ||
-    (item.mediaType === "INSTAGRAM" && item.embedUrl);
+  (item.mediaType === "UPLOAD" && Number.isInteger(item.mediaId)) ||
+  (item.mediaType === "INSTAGRAM" &&
+    typeof item.embedUrl === "string" &&
+    item.embedUrl.startsWith("https://www.instagram.com"));
 
   const hasProduct = !!item.productId;
   const isComplete = hasMedia && hasProduct;
@@ -161,30 +175,30 @@ export default function InfluencerItem({
               type="button"
               onClick={() =>
                 item.mediaType !== "UPLOAD" &&
-                onChange({ mediaType: "UPLOAD", embedUrl: null })
+                onChange({ mediaType: "UPLOAD", embedUrl: null ,  mediaId: null })
               }
-              className={`p-4 border-2 rounded-sm ${
+              className={`p-4 border-2 rounded-sm flex items-center justify-center gap-2 ${
                 item.mediaType === "UPLOAD"
                   ? "border-brandPink bg-pink-50 text-brandPink"
-                  : "border-gray-200"
+                  : "border-gray-200 hover:border-gray-300"
               }`}
             >
-              <FiUpload /> Upload
+              <FiUpload /> <span className="text-xs font-bold">Upload</span>
             </button>
 
             <button
               type="button"
               onClick={() =>
                 item.mediaType !== "INSTAGRAM" &&
-                onChange({ mediaType: "INSTAGRAM", mediaId: null })
+                onChange({ mediaType: "INSTAGRAM", mediaId: null  ,  embedUrl: "" })
               }
-              className={`p-4 border-2 rounded-sm ${
+              className={`p-4 border-2 rounded-sm flex items-center justify-center gap-2 ${
                 item.mediaType === "INSTAGRAM"
                   ? "border-brandPink bg-pink-50 text-brandPink"
-                  : "border-gray-200"
+                  : "border-gray-200 hover:border-gray-300"
               }`}
             >
-              <FiInstagram /> Instagram
+              <FiInstagram /> <span className="text-xs font-bold">Instagram</span>
             </button>
           </div>
         </div>
@@ -195,20 +209,55 @@ export default function InfluencerItem({
             value={item.mediaId ? [item.mediaId] : []}
             multiple={false}
             accept={["image/*", "video/*"]}
-            onChange={(ids) => onChange({ mediaId: ids[0] })}
+            onChange={(ids) => onChange({ mediaId: ids[0] , embedUrl: null,  })}
           />
         )}
 
         {/* Instagram */}
         {item.mediaType === "INSTAGRAM" && (
-          <input
-            type="url"
-            placeholder="https://www.instagram.com/reel/..."
-            value={item.embedUrl || ""}
-            onChange={(e) => onChange({ embedUrl: e.target.value })}
-            className="w-full bg-gray-50 px-4 py-3 rounded-sm text-xs"
-          />
+          <div>
+            <input
+              type="url"
+              placeholder="https://www.instagram.com/reel/..."
+              value={item.embedUrl || ""}
+              onChange={(e) => onChange({ embedUrl: normalizeInstagramUrl(e.target.value), mediaId: null })}
+              className="w-full bg-gray-50 px-4 py-3 rounded-sm text-xs"
+            />
+            <p className="text-[9px] text-gray-400 mt-2 uppercase tracking-widest">
+              💡 Paste the Instagram Reel or Post URL (e.g. https://www.instagram.com/reel/...)
+)
+            </p>
+          </div>
         )}
+
+        {/* ✅ NEW: Influencer Name & CTA Text */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">
+              Influencer Name <span className="text-gray-300">(Optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="@fashionista"
+              value={item.influencerName || ""}
+              onChange={(e) => onChange({ influencerName: e.target.value })}
+              className="w-full bg-gray-50 px-4 py-3 rounded-sm text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">
+              CTA Button Text
+            </label>
+            <input
+              type="text"
+              placeholder="Shop Now"
+              value={item.ctaText || "Shop Now"}
+              onChange={(e) => onChange({ ctaText: e.target.value })}
+              className="w-full bg-gray-50 px-4 py-3 rounded-sm text-xs"
+            />
+          </div>
+        </div>
 
         {/* Product */}
         <div>
@@ -217,12 +266,13 @@ export default function InfluencerItem({
           </label>
 
           {product ? (
-            <div className="bg-emerald-50 border border-emerald-200 p-4 flex justify-between">
+            <div className="bg-emerald-50 border border-emerald-200 p-4 flex justify-between rounded-sm">
               <div className="flex gap-3">
                 {product.media?.[0]?.url && (
                   <img
                     src={`${process.env.NEXT_PUBLIC_API_URL}${product.media[0].url}`}
-                    className="w-12 h-12 object-cover"
+                    className="w-12 h-12 object-cover rounded-sm"
+                    alt={product.title}
                   />
                 )}
                 <div>
@@ -235,13 +285,13 @@ export default function InfluencerItem({
               <button
                 type="button"
                 onClick={clearProduct}
-                className="text-[9px] text-red-500 uppercase"
+                className="text-[9px] text-red-500 uppercase font-bold hover:text-red-700"
               >
                 Change
               </button>
             </div>
           ) : (
-            <>
+            <div className="space-y-2">
               <input
                 placeholder="Search for product..."
                 value={search}
@@ -252,17 +302,37 @@ export default function InfluencerItem({
                 className="w-full bg-gray-50 px-4 py-3 rounded-sm text-xs"
               />
 
-              {results.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => selectProduct(p)}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex gap-3"
-                >
-                  {p.title}
-                </button>
-              ))}
-            </>
+              {searching && (
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest">
+                  Searching...
+                </p>
+              )}
+
+              {results.length > 0 && (
+                <div className="border border-gray-100 rounded-sm overflow-hidden">
+                  {results.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => selectProduct(p)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 flex gap-3 items-center border-b border-gray-50 last:border-b-0"
+                    >
+                      {p.media?.[0]?.url && (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_URL}${p.media[0].url}`}
+                          className="w-10 h-10 object-cover rounded-sm"
+                          alt={p.title}
+                        />
+                      )}
+                      <div>
+                        <p className="text-[10px] font-bold">{p.title}</p>
+                        <p className="text-[9px] text-gray-400">₹{p.price}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
