@@ -7,12 +7,11 @@ import { api } from "@/lib/api";
 import HeroFields from "@/components/common/HeroFields";
 import CategoryStripFields from "@/components/common/CategoryStripFields";
 import EditorialFields from "@/components/common/EditorialFields";
-import InfluencerFields from "@/components/common/InfluencerFields"; // ✅ Import Influencer Fields
+import InfluencerFields from "@/components/common/InfluencerFields";
 import AdminLayout from "@/components/AdminLayout";
 import { FiArrowLeft, FiLayers, FiSettings, FiCheckCircle, FiInstagram } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ✅ Added INFLUENCER to the type
 type SectionType = "HERO" | "CATEGORY_STRIP" | "EDITORIAL" | "INFLUENCER";
 
 export default function CreateHomepageSectionPage() {
@@ -41,8 +40,16 @@ export default function CreateHomepageSectionPage() {
       setLoading(true);
       setError("");
 
+      // ✅ Validation for HERO
       if (type === "HERO" && (!config.slides || config.slides.length === 0)) {
         setError("Please add at least one hero slide.");
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Validation for INFLUENCER
+      if (type === "INFLUENCER" && (!config.items || config.items.length === 0)) {
+        setError("Please add at least one influencer reel.");
         setLoading(false);
         return;
       }
@@ -122,7 +129,7 @@ export default function CreateHomepageSectionPage() {
                     <option value="HERO">Hero Storyboard</option>
                     <option value="CATEGORY_STRIP">Category Strip</option>
                     <option value="EDITORIAL">Editorial / New In</option>
-                    <option value="INFLUENCER">Influencer Reel</option> {/* ✅ Added Option */}
+                    <option value="INFLUENCER">Influencer Reel</option>
                   </select>
                 </div>
 
@@ -155,7 +162,6 @@ export default function CreateHomepageSectionPage() {
           {/* 2. DYNAMIC CONFIGURATION */}
           <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm min-h-[400px]">
             <div className="flex items-center gap-3 border-b border-gray-50 pb-4 mb-8">
-              {/* ✅ Dynamic icon for Influencer */}
               {type === "INFLUENCER" ? <FiInstagram className="text-brandPink" /> : <FiSettings className="text-brandPink" />}
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack">
                 {type.replace("_", " ")} Configuration
@@ -173,7 +179,7 @@ export default function CreateHomepageSectionPage() {
                 {type === "HERO" && <HeroFields value={config} onChange={setConfig} />}
                 {type === "CATEGORY_STRIP" && <CategoryStripFields value={config} onChange={setConfig} />}
                 {type === "EDITORIAL" && <EditorialFields value={config} onChange={setConfig} />}
-                {type === "INFLUENCER" && <InfluencerFields value={config} onChange={setConfig} />} {/* ✅ Added Influencer fields */}
+                {type === "INFLUENCER" && <InfluencerFields value={config} onChange={setConfig} />}
               </motion.div>
             </AnimatePresence>
           </section>
