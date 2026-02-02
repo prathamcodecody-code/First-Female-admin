@@ -17,6 +17,7 @@ import {
   PenIcon,
   PersonStanding,
   SplinePointer,
+   Phone,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -151,4 +152,5 @@ export default function Sidebar() {
     </>
   );
 }
+
 
