@@ -99,6 +99,7 @@ export default function Sidebar() {
           {LinkItem("/homepage", "Edit Home", PenIcon)}
           {LinkItem("/coupons", "Coupons", SplinePointer)}
           {LinkItem("/feedback", "Feedback", MessageSquare)}
+          {LinkItem("/contacts", "Contacts", Phone)}
           {LinkItem("/users", "Users", PersonStanding)}
           {LinkItem("/discounts", "Discounts", Percent)}
           {LinkItem("/trending", "Trending", Star)}
@@ -150,3 +151,4 @@ export default function Sidebar() {
     </>
   );
 }
+
