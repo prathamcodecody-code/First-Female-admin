@@ -144,6 +144,12 @@ export default function EditProductPage() {
   };
 
   const updateProduct = async () => {
+
+     if (!selectedCategory || !selectedType || !selectedSubtype) {
+    alert("Please select Category, Type, and Subtype");
+    return;
+  }
+    
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
