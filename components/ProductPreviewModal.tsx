@@ -30,6 +30,15 @@ export default function ProductPreviewModal({
   const createdAtValid =
     product.createdAt && !isNaN(Date.parse(product.createdAt));
 
+  /* ---------- VENDOR CALCULATION ---------- */
+  const vendors = product.productVendors || [];
+  const totalVendorCost = vendors.reduce(
+    (sum: number, pv: any) => sum + (Number(pv.costPrice || 0) * pv.quantity),
+    0
+  );
+  const profitPerUnit = finalPrice - (vendors.length > 0 ? totalVendorCost / (product.stock || 1) : 0);
+  const totalProfit = profitPerUnit * (product.stock || 1);
+
   /* ---------- ATTRIBUTE HELPERS ---------- */
   const renderList = (items: any[], key: string) =>
     items?.length ? (
@@ -50,7 +59,7 @@ export default function ProductPreviewModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-      <div className="bg-white w-full max-w-[900px] max-h-[90vh] overflow-y-auto rounded-xl shadow-xl p-6">
+      <div className="bg-white w-full max-w-[1000px] max-h-[90vh] overflow-y-auto rounded-xl shadow-xl p-6">
 
         {/* HEADER */}
         <div className="flex justify-between items-center border-b pb-3 sticky top-0 bg-white z-10">
@@ -59,7 +68,7 @@ export default function ProductPreviewModal({
         </div>
 
         {/* BODY */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* LEFT — IMAGES */}
           <div className="space-y-3">
@@ -80,7 +89,7 @@ export default function ProductPreviewModal({
             )}
           </div>
 
-          {/* RIGHT — DETAILS */}
+          {/* CENTER — DETAILS */}
           <div className="space-y-5">
             <div>
               <h3 className="text-2xl font-bold text-gray-800">{product.title}</h3>
@@ -187,6 +196,158 @@ export default function ProductPreviewModal({
                     })
                   : "—"}
               </p>
+            </div>
+          </div>
+
+          {/* RIGHT — VENDORS & PROFIT */}
+          <div className="space-y-5">
+            {/* VENDOR INFORMATION */}
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4 rounded-lg">
+              <h4 className="font-bold text-sm text-amber-900 uppercase tracking-wide mb-4 border-b border-amber-200 pb-2">
+                📦 Vendor Details
+              </h4>
+
+              {vendors.length > 0 ? (
+                <div className="space-y-4">
+                  {vendors.map((pv: any, idx: number) => (
+                    <div key={`vendor-${pv.vendorId || idx}`} className="bg-white p-3 rounded-lg border border-amber-100 space-y-2">
+                      {/* Vendor Company Name */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-[11px] font-black uppercase text-gray-400 tracking-widest">Company</p>
+                          <p className="text-sm font-bold text-gray-800">{pv.vendor?.companyName || "—"}</p>
+                        </div>
+                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full whitespace-nowrap ${
+                          pv.vendor?.vendorType === "MANUFACTURER"
+                            ? "bg-blue-100 text-blue-700"
+                            : pv.vendor?.vendorType === "WHOLESALER"
+                            ? "bg-purple-100 text-purple-700"
+                            : pv.vendor?.vendorType === "RETAILER"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}>
+                          {pv.vendor?.vendorType || "—"}
+                        </span>
+                      </div>
+
+                      {/* Contact Person */}
+                      {pv.vendor?.contactPersonName && (
+                        <div>
+                          <p className="text-[11px] font-black uppercase text-gray-400 tracking-widest">Contact Person</p>
+                          <p className="text-sm text-gray-700">{pv.vendor.contactPersonName}</p>
+                        </div>
+                      )}
+
+                      {/* Contact & Email */}
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        {pv.vendor?.contactNumber && (
+                          <div>
+                            <p className="font-black text-gray-400 uppercase tracking-widest">Phone</p>
+                            <p className="text-gray-700 font-mono">{pv.vendor.contactNumber}</p>
+                          </div>
+                        )}
+                        {pv.vendor?.emailId && (
+                          <div>
+                            <p className="font-black text-gray-400 uppercase tracking-widest">Email</p>
+                            <p className="text-gray-700 font-mono break-all">{pv.vendor.emailId}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Cost & Fabric */}
+                      <div className="pt-2 border-t border-amber-100 space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-[11px] font-black uppercase text-gray-400 tracking-widest">Cost Price</p>
+                            <p className="text-lg font-bold text-orange-600">₹{Number(pv.costPrice || 0).toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-black uppercase text-gray-400 tracking-widest">Quantity</p>
+                            <p className="text-lg font-bold text-gray-800">{pv.quantity}</p>
+                          </div>
+                        </div>
+
+                        {pv.fabricType && (
+                          <div>
+                            <p className="text-[11px] font-black uppercase text-gray-400 tracking-widest">Fabric Type</p>
+                            <p className="text-sm text-gray-700">{pv.fabricType}</p>
+                          </div>
+                        )}
+
+                        {/* Total Cost for this Vendor */}
+                        <div className="bg-amber-50 p-2 rounded border border-amber-100">
+                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Subtotal</p>
+                          <p className="text-base font-bold text-amber-700">
+                            ₹{(Number(pv.costPrice || 0) * pv.quantity).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Summary */}
+                  <div className="bg-white p-3 rounded-lg border border-amber-200 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <p className="text-gray-600">Total Vendor Cost:</p>
+                      <p className="font-bold text-orange-600">₹{totalVendorCost.toLocaleString()}</p>
+                    </div>
+                    <div className="flex justify-between text-sm border-t border-amber-100 pt-2">
+                      <p className="text-gray-600">Cost per Unit:</p>
+                      <p className="font-bold text-orange-600">₹{(totalVendorCost / (product.stock || 1)).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-amber-700 italic">No vendors assigned</p>
+              )}
+            </div>
+
+            {/* PROFIT ANALYSIS */}
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 p-4 rounded-lg">
+              <h4 className="font-bold text-sm text-emerald-900 uppercase tracking-wide mb-4 border-b border-emerald-200 pb-2">
+                💰 Profit Analysis
+              </h4>
+
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <p className="text-sm text-gray-600">Selling Price:</p>
+                  <p className="font-bold text-lg text-emerald-600">₹{finalPrice.toLocaleString()}</p>
+                </div>
+
+                <div className="flex justify-between">
+                  <p className="text-sm text-gray-600">Cost per Unit:</p>
+                  <p className="font-bold text-lg text-orange-600">
+                    ₹{(totalVendorCost / (product.stock || 1)).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="flex justify-between border-t-2 border-emerald-200 pt-2">
+                  <p className="text-sm font-bold text-gray-700">Profit per Unit:</p>
+                  <p className={`font-bold text-lg ${profitPerUnit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    ₹{profitPerUnit.toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="bg-white p-2 rounded border border-emerald-100">
+                  <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Total Profit (All Units)</p>
+                  <p className={`text-2xl font-black ${totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    ₹{totalProfit.toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[10px] pt-2">
+                  <div className="bg-white p-2 rounded border border-gray-100">
+                    <p className="font-black text-gray-400 uppercase">Margin %</p>
+                    <p className="font-bold text-gray-800">
+                      {finalPrice > 0 ? ((profitPerUnit / finalPrice) * 100).toFixed(1) : 0}%
+                    </p>
+                  </div>
+                  <div className="bg-white p-2 rounded border border-gray-100">
+                    <p className="font-black text-gray-400 uppercase">Total Units</p>
+                    <p className="font-bold text-gray-800">{product.stock}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
