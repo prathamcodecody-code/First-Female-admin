@@ -30,10 +30,10 @@ export default function EditProductPage() {
   const [types, setTypes] = useState<any[]>([]);
   const [subtypes, setSubtypes] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedType, setSelectedType] = useState("");
-  const [selectedSubtype, setSelectedSubtype] = useState("");
-  const [selectedSeason, setSelectedSeason] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<number | string>("");
+  const [selectedType, setSelectedType] = useState<number | string>("");
+  const [selectedSubtype, setSelectedSubtype] = useState<number | string>("");
+  const [selectedSeason, setSelectedSeason] = useState<number | string>("");
 
   const [colors, setColors] = useState<number[]>([]);
   const [fabrics, setFabrics] = useState<number[]>([]);
@@ -52,58 +52,138 @@ export default function EditProductPage() {
   const [sizes, setSizes] = useState<{ id?: number; size: string; stock: number }[]>([]);
   const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
   const [existingImages, setExistingImages] = useState<(string | null)[]>([null, null, null, null]);
+  
+  // ✅ Track loading state
+  const [isLoading, setIsLoading] = useState(true);
 
   const totalStock = useMemo(() => sizes.reduce((sum, s) => sum + Number(s.stock || 0), 0), [sizes]);
 
-  /* ================= FETCHING ================= */
+  /* ================= FETCH PRODUCT AND ALL RELATED DATA ================= */
   useEffect(() => {
     if (!productId) return;
-    api.get(`/products/${productId}`).then((res) => {
-      const data = res.data;
-      setProduct(data);
-      setTitle(data.title);
-      setDescription(data.description);
-      setPrice(data.price);
-      setWeight(data.weight || "");
-      setDiscountType(data.discountType || "");
-      setDiscountValue(data.discountValue !== null ? String(data.discountValue) : "");
-      setStock(data.stock);
-      setSelectedCategory(data.categoryId);
-      setSelectedSeason(data.seasonId ? String(data.seasonId) : "");
-      setColors(data.colors?.map((c: any) => c.id) || []);
-      setFabrics(data.fabrics?.map((f: any) => f.id) || []);
-      setOccasions(data.occasions?.map((o: any) => o.id) || []);
-      setFits(data.fits?.map((f: any) => f.id) || []);
-      setSleeves(data.sleeves?.map((s: any) => s.id) || []);
-      setPatterns(data.patterns?.map((p: any) => p.id) || []);
-      setSelectedType(data.typeId);
-      setSelectedSubtype(data.subtypeId);
-      setIsTrending(Boolean(data.isTrending));
-      setSizes(Array.isArray(data.sizes) ? data.sizes.map((s: any) => ({ id: s.id, size: s.size, stock: s.stock })) : []);
-      setExistingImages([data.img1 || null, data.img2 || null, data.img3 || null, data.img4 || null]);
-    }).catch(err => console.error("Error loading product", err));
+
+    const fetchProductData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // 1. Fetch product details
+        const productRes = await api.get(`/products/${productId}`);
+        const data = productRes.data;
+
+        // 2. Fetch all dropdown options
+        const [categoriesRes, seasonsRes, colorsRes, fabricsRes, occasionsRes, fitsRes, sleevesRes, patternsRes] = await Promise.all([
+          api.get("/categories"),
+          api.get("/attributes/seasons"),
+          api.get("/attributes/colors"),
+          api.get("/attributes/fabrics"),
+          api.get("/attributes/occasions"),
+          api.get("/attributes/fits"),
+          api.get("/attributes/sleeves"),
+          api.get("/attributes/patterns"),
+        ]);
+
+        // 3. Set dropdown lists
+        setCategories(categoriesRes.data);
+        setSeasons(seasonsRes.data);
+        setColorList(colorsRes.data);
+        setFabricList(fabricsRes.data);
+        setOccasionList(occasionsRes.data);
+        setFitList(fitsRes.data);
+        setSleeveList(sleevesRes.data);
+        setPatternList(patternsRes.data);
+
+        // 4. Fetch types and subtypes for this product's category
+        if (data.category?.id) {
+          const typesRes = await api.get(`/product-types?categoryId=${data.category.id}`);
+          setTypes(typesRes.data);
+
+          if (data.type?.id) {
+            const subtypesRes = await api.get(`/product-subtypes?typeId=${data.type.id}`);
+            setSubtypes(subtypesRes.data);
+          }
+        }
+
+        // 5. Set all product data
+        setProduct(data);
+        setTitle(data.title);
+        setDescription(data.description);
+        setPrice(String(data.price));
+        setWeight(String(data.weight || ""));
+        setDiscountType(data.discountType || "");
+        setDiscountValue(data.discountValue !== null ? String(data.discountValue) : "");
+        setStock(String(data.stock));
+
+        // ✅ FIX: Extract IDs from nested objects
+        setSelectedCategory(data.category?.id || "");
+        setSelectedType(data.type?.id || "");
+        setSelectedSubtype(data.subtype?.id || "");
+        setSelectedSeason(data.season?.id || "");
+
+        console.log("Category ID from product:", data.category?.id, "Type:", typeof data.category?.id);
+
+        setColors(data.colors?.map((c: any) => c.id) || []);
+        setFabrics(data.fabrics?.map((f: any) => f.id) || []);
+        setOccasions(data.occasions?.map((o: any) => o.id) || []);
+        setFits(data.fits?.map((f: any) => f.id) || []);
+        setSleeves(data.sleeves?.map((s: any) => s.id) || []);
+        setPatterns(data.patterns?.map((p: any) => p.id) || []);
+
+        setIsTrending(Boolean(data.isTrending));
+
+        setSizes(
+          Array.isArray(data.sizes)
+            ? data.sizes.map((s: any) => ({ id: s.id, size: s.size, stock: s.stock }))
+            : []
+        );
+
+        setExistingImages([data.img1 || null, data.img2 || null, data.img3 || null, data.img4 || null]);
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error loading product:", error);
+        alert("Error loading product data");
+        setIsLoading(false);
+      }
+    };
+
+    fetchProductData();
   }, [productId]);
 
-  useEffect(() => {
-    api.get("/categories").then(res => setCategories(res.data));
-    api.get("/attributes/seasons").then(r => setSeasons(r.data));
-    api.get("/attributes/colors").then(r => setColorList(r.data));
-    api.get("/attributes/fabrics").then(r => setFabricList(r.data));
-    api.get("/attributes/occasions").then(r => setOccasionList(r.data));
-    api.get("/attributes/fits").then(r => setFitList(r.data));
-    api.get("/attributes/sleeves").then(r => setSleeveList(r.data));
-    api.get("/attributes/patterns").then(r => setPatternList(r.data));
-  }, []);
+  /* ================= HANDLE CATEGORY CHANGE ================= */
+  const handleCategoryChange = async (categoryIdValue: string | number) => {
+    const numId = Number(categoryIdValue);
+    setSelectedCategory(numId);
+    setSelectedType("");
+    setSelectedSubtype("");
+    setTypes([]);
+    setSubtypes([]);
 
-  useEffect(() => {
-    if (!selectedCategory) return;
-    api.get(`/product-types?categoryId=${selectedCategory}`).then((res) => setTypes(res.data));
-  }, [selectedCategory]);
+    if (categoryIdValue) {
+      try {
+        const res = await api.get(`/product-types?categoryId=${numId}`);
+        setTypes(res.data);
+      } catch (error) {
+        console.error("Error loading types:", error);
+      }
+    }
+  };
 
-  useEffect(() => {
-    if (!selectedType) return;
-    api.get(`/product-subtypes?typeId=${selectedType}`).then((res) => setSubtypes(res.data));
-  }, [selectedType]);
+  /* ================= HANDLE TYPE CHANGE ================= */
+  const handleTypeChange = async (typeIdValue: string | number) => {
+    const numId = Number(typeIdValue);
+    setSelectedType(numId);
+    setSelectedSubtype("");
+    setSubtypes([]);
+
+    if (typeIdValue) {
+      try {
+        const res = await api.get(`/product-subtypes?typeId=${numId}`);
+        setSubtypes(res.data);
+      } catch (error) {
+        console.error("Error loading subtypes:", error);
+      }
+    }
+  };
 
   const estimatedPricing = useMemo(() => {
     const p = Number(price);
@@ -144,26 +224,25 @@ export default function EditProductPage() {
   };
 
   const updateProduct = async () => {
+    if (!selectedCategory || !selectedType || !selectedSubtype) {
+      alert("Please select Category, Type, and Subtype");
+      return;
+    }
 
-     if (!selectedCategory || !selectedType || !selectedSubtype) {
-    alert("Please select Category, Type, and Subtype");
-    return;
-  }
-    
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
     formData.append("price", price);
     formData.append("weight", weight);
     formData.append("stock", String(totalStock));
-    formData.append("categoryId", selectedCategory);
-    formData.append("typeId", selectedType);
-    formData.append("subtypeId", selectedSubtype);
+    formData.append("categoryId", String(selectedCategory));
+    formData.append("typeId", String(selectedType));
+    formData.append("subtypeId", String(selectedSubtype));
     formData.append("isTrending", String(isTrending));
     formData.append("discountType", discountType || "");
     formData.append("discountValue", discountValue || "");
     formData.append("sizes", JSON.stringify(sizes));
-    formData.append("seasonId", selectedSeason || "");
+    formData.append("seasonId", selectedSeason ? String(selectedSeason) : "");
     formData.append("colors", JSON.stringify(colors));
     formData.append("fabrics", JSON.stringify(fabrics));
     formData.append("occasions", JSON.stringify(occasions));
@@ -181,11 +260,18 @@ export default function EditProductPage() {
       alert("Product updated!");
       router.push("/products");
     } catch (err) {
+      console.error("Update error:", err);
       alert("Error updating product");
     }
   };
 
-  if (!product) return <AdminLayout><p className="p-10 text-center">Loading Canvas...</p></AdminLayout>;
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <p className="p-10 text-center">Loading Canvas...</p>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -311,22 +397,86 @@ export default function EditProductPage() {
             <section className="bg-white border border-gray-100 p-8 rounded-sm shadow-sm space-y-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-brandBlack">Logistics</h2>
               <div className="space-y-4">
-                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                </select>
-                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedType} onChange={(e) => setSelectedType(e.target.value)} disabled={!selectedCategory}>
-                  <option value="">Select Type</option>
-                  {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedSubtype} onChange={(e) => setSelectedSubtype(e.target.value)} disabled={!selectedType}>
-                  <option value="">Select Subtype</option>
-                  {subtypes.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
-                </select>
-                <select className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)}>
-                  <option value="">Select Season</option>
-                  {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                <div>
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-2">Category</label>
+                  <select 
+                    className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" 
+                    value={selectedCategory} 
+                    onChange={(e) => handleCategoryChange(e.target.value)}
+                  >
+                    <option value="">-- Select Category --</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedCategory && (
+                    <p className="text-[8px] text-gray-400 mt-1">
+                      Selected: {categories.find((c) => c.id === selectedCategory)?.name}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-2">Type</label>
+                  <select 
+                    className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" 
+                    value={selectedType} 
+                    onChange={(e) => handleTypeChange(e.target.value)} 
+                    disabled={!selectedCategory}
+                  >
+                    <option value="">-- Select Type --</option>
+                    {types.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedType && (
+                    <p className="text-[8px] text-gray-400 mt-1">
+                      Selected: {types.find((t) => t.id === selectedType)?.name}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-2">Subtype</label>
+                  <select 
+                    className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" 
+                    value={selectedSubtype} 
+                    onChange={(e) => setSelectedSubtype(Number(e.target.value))} 
+                    disabled={!selectedType}
+                  >
+                    <option value="">-- Select Subtype --</option>
+                    {subtypes.map((st) => (
+                      <option key={st.id} value={st.id}>
+                        {st.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedSubtype && (
+                    <p className="text-[8px] text-gray-400 mt-1">
+                      Selected: {subtypes.find((st) => st.id === selectedSubtype)?.name}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-2">Season</label>
+                  <select 
+                    className="w-full bg-gray-50 border-none px-4 py-3 text-xs font-bold uppercase tracking-widest" 
+                    value={selectedSeason} 
+                    onChange={(e) => setSelectedSeason(Number(e.target.value) || "")}
+                  >
+                    <option value="">-- Select Season --</option>
+                    {seasons.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 
                 <div className="pt-6 border-t border-gray-50">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Stock Level: {totalStock}</p>
@@ -371,4 +521,3 @@ function AttributeWrapper({ title, items, selected, toggle }: any) {
     </div>
   );
 }
-
