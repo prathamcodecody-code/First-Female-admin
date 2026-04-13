@@ -6,8 +6,10 @@ import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import ProductPreviewModal from "@/components/ProductPreviewModal";
+import BulkUploadModal from "@/components/BulkUploadModal";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import SearchIcon from "@mui/icons-material/Search";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function ProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewProduct, setPreviewProduct] = useState<any>(null);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   // FILTERS
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -93,13 +96,20 @@ export default function ProductsPage() {
   };
 
   const openPreview = (product: any) => {
-  setPreviewProduct(product);
-  setPreviewOpen(true);
-};
+    setPreviewProduct(product);
+    setPreviewOpen(true);
+  };
+
   const openDeleteModal = (id: number) => {
-  setDeleteId(id);
-  setModalOpen(true);
-};
+    setDeleteId(id);
+    setModalOpen(true);
+  };
+
+  const handleBulkUploadSuccess = () => {
+    // Refresh products list after successful upload
+    setPage(1);
+    fetchProducts();
+  };
 
   return (
     <AdminLayout>
@@ -121,6 +131,13 @@ export default function ProductsPage() {
           >
             <FilterAltIcon fontSize="small" />
             Filters
+          </button>
+          <button
+            onClick={() => setBulkUploadOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2.5 rounded-lg font-bold hover:shadow-lg shadow-md transition-all active:scale-95"
+          >
+            <CloudUploadIcon fontSize="small" />
+            Bulk Upload
           </button>
           <button
             onClick={() => router.push("/products/create")}
@@ -285,6 +302,7 @@ export default function ProductsPage() {
 
       <DeleteConfirmModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onConfirm={confirmDelete} itemName="product" />
       <ProductPreviewModal isOpen={previewOpen} onClose={() => setPreviewOpen(false)} product={previewProduct} />
+      <BulkUploadModal isOpen={bulkUploadOpen} onClose={() => setBulkUploadOpen(false)} onSuccess={handleBulkUploadSuccess} />
     </AdminLayout>
   );
 }
